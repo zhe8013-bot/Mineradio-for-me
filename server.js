@@ -142,15 +142,15 @@ const CUEFIELD_FEEDBACK_FILE = process.env.CUEFIELD_FEEDBACK_FILE || path.join(_
 const LISTEN_SYNC_JOURNAL_FILE = process.env.MINERADIO_LISTEN_SYNC_FILE || path.join(__dirname, 'data', 'listen-sync-journal.json');
 const LISTEN_SYNC_JOURNAL_LIMIT = 600;
 const APP_PACKAGE = readPackageInfo();
-const APP_VERSION = process.env.MINERADIO_VERSION || APP_PACKAGE.version || '2.2.0';
+const APP_VERSION = process.env.MINERADIO_VERSION || APP_PACKAGE.version || '2.2.1';
 const UPDATE_CONFIG = readUpdateConfig(APP_PACKAGE);
 const qishuiAudioDecryptor = new TrackDecryptor();
 const qishuiAudioDecryptCache = new Map();
 const QISHUI_AUDIO_DECRYPT_CACHE_MAX_BYTES = 96 * 1024 * 1024;
 let qishuiAudioDecryptCacheBytes = 0;
 const UPDATE_FALLBACK_NOTES = [
-  '本次下载入口已更换，请使用公告中的新网盘链接，并更新旧收藏。',
-  '修复音乐接口的登录、账号识别与播放稳定性问题。',
+  '本版本为基于 XxHuberrr 原作的个人二创维护版，请到本仓库 GitHub Release 获取完整安装包。',
+  '修复 Wallpaper Engine 背景下长时间全屏播放后歌词和视觉效果消失的问题。',
 ];
 const OPEN_METEO_FORECAST_URL = 'https://api.open-meteo.com/v1/forecast';
 const OPEN_METEO_GEOCODE_URL = 'https://geocoding-api.open-meteo.com/v1/search';

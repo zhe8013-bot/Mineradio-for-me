@@ -1,56 +1,36 @@
-# Mineradio
+# Mineradio · 个人二创维护版
 
-> **项目状态：长期停更**
->
-> 目前因个人原因，Mineradio 项目处于长期停更状态。感兴趣的个人玩家可随意使用本项目进行创作，也可以自行修改和修复 bug。希望各位玩得开心，也希望世界和平，享受我们的音乐。
->
-> 本仓库保留公开源码、历史版本和下载说明，方便个人玩家 Fork、建立分支或制作二创版本。
+基于 [XxHuberrr 的 Mineradio 原项目](https://github.com/XxHuberrr/Mineradio-paused) 进行个人修改与维护。**原作作者和主要开发者为 XxHuberrr**，原作设计、版权、社区贡献与致谢均予以保留；本仓库由 [zhe8013-bot](https://github.com/zhe8013-bot) 维护个人二创版本。
+
+原作者已宣布原项目长期停更。本仓库以原作 `2.2.0` 为基础，按个人使用需要进行修复，不承诺固定更新周期。原作者提交历史已保留，GitHub 贡献者统计由真实提交记录生成。
 
 ![Mineradio 暗场启动页](./docs/assets/readme/cinema-beat-smoke.png)
 
-Mineradio 是一款 Windows 桌面沉浸式音乐播放器，把搜索播放、歌词舞台、粒子视觉、3D 歌单架和完整桌面模式组合成一个更接近现场感的私人音乐空间。
-
-## 立即下载 Windows 安装包
-
-> 本次下载入口已更换，请使用下面的新网盘链接，并更新旧收藏。通过公告中的网盘入口下载，可以继续使用现有版本；项目目前处于长期停更状态。
-
-| 下载入口 | 推荐人群 | 链接 |
-| --- | --- | --- |
-| 夸克盘 | 夸克用户 | [下载 Mineradio 2.2.0](https://pan.quark.cn/s/4b124d3e81d3) |
-| 百度云 | 百度网盘用户（提取码 `SJHP`） | [下载 Mineradio 2.2.0](https://pan.baidu.com/s/17CwpHUza67w_Grgc3s5nOw?pwd=SJHP) |
-| GitHub Release | 版本说明与源码 | [查看 Mineradio 2.2.0](https://github.com/XxHuberrr/Mineradio/releases/tag/v2.2.0) |
-
-本页、发布公告和软件更新入口使用相同的两条新链接。旧分享地址不再作为本次版本的下载入口。
-
-安装时只需要下载并运行 `Mineradio-2.2.0-Setup.exe`。不要把 `.blockmap`、`latest.yml` 或 `win-unpacked` 当成正式安装包。
-
-2.1.0 用户如果未看到更新提醒，请从托盘彻底退出后重新打开软件，切回普通窗口，等待约 30 秒后查看右上角更新箭头。旧版不会自动弹出公告；也可以直接使用上面的新网盘链接下载安装包。
-
-## 下载或安装被拦截怎么办
-
-小众 Electron 桌面软件、未签名安装包有时会被浏览器、Windows Defender 或 SmartScreen 提示风险。请先确认安装包来自本次公告的下载入口，文件名是 `Mineradio-2.2.0-Setup.exe`。
-
-1. 浏览器下载栏提示风险时，打开下载列表，点这条下载右侧的 `...` 三个点，选择 `保留` / `仍要保留` / `显示更多` 后继续保留。
-2. Windows SmartScreen 弹出蓝色拦截窗口时，点 `更多信息`，再点 `仍要运行`。
-3. 如果杀毒软件明确显示木马、高危或已经隔离，不要强行运行；删除该文件后重新从上面的网盘入口下载，仍然异常请带截图反馈给作者。
-
-## 作者支持
-
-如果 Mineradio 陪你多听了一首歌，也欢迎请作者一杯咖啡。
-
-[查看完整支持页](./docs/SUPPORT.md)
-
-![Mineradio 作者支持渠道](./docs/assets/support/mineradio-author-support-poster.png)
-
-Mineradio 2.2 是历史稳定版本，修复了音乐接口的登录与播放问题，改善歌单加载和网络异常恢复，并加入更多手势操作与粒子预设。
+Mineradio 是一款 Windows 桌面沉浸式音乐播放器，保留原作的搜索播放、歌词舞台、粒子视觉、3D 歌单架与完整桌面模式。
 
 ## 当前版本
 
-当前版本：`2.2.0`
+**2.2.1 · 个人二创维护版**，基于原作 2.2.0。
 
-状态：Mineradio 2.2.0 历史正式版；项目目前长期停更。
+- 修复 Wallpaper Engine 背景下，长时间全屏播放后歌词和视觉效果消失的问题。
+- 窗口可见时保持原生壁纸上方的界面绘制，最小化后继续节能，恢复窗口时保留壁纸会话。
+- 统一源码、界面与安装包版本，更新来源改为本独立仓库。
 
-> 安全提示：`v1.0.10` 及更早旧安装包不再建议继续安装或传播。请使用本次公告提供的 `Mineradio-2.2.0-Setup.exe`。
+完整变更见 [更新记录](./CHANGELOG.md)。
+
+## 下载与安装
+
+从本仓库的 [Mineradio 2.2.1 发布页](https://github.com/zhe8013-bot/Mineradio-for-me/releases/tag/v2.2.1) 下载并运行 `Mineradio-2.2.1-Setup.exe`，适用于 Windows x64。发布页同时提供版本说明、源码和 `SHA256SUMS.txt` 校验文件。
+
+本版本为基于原作的个人二创维护版。原作者网盘与历史安装包不作为本维护版的下载入口。`latest.yml` 是兼容更新检测的版本说明文件，不是安装包。
+
+已安装旧版本的用户可运行完整安装包进行更新。原作者旧版的更新来源不会自动切换到本仓库，首次使用本维护版需手动下载安装包。
+
+> 原项目提示：`v1.0.10` 及更早旧安装包不再建议继续安装或传播。
+
+## 下载或安装提示风险
+
+本安装包未进行代码签名，浏览器或 Windows SmartScreen 可能提示风险。请确认文件来自本仓库发布页，并可使用发布页的 SHA-256 校验文件核对完整性。如果安全软件明确报出木马或高危威胁，请停止安装并在本仓库反馈。
 
 ## 核心特性
 
@@ -68,14 +48,6 @@ Mineradio 2.2 是历史稳定版本，修复了音乐接口的登录与播放问
 - GitHub Releases 更新检测与下载入口
 - 首次启动内置「默认测试」视觉用户存档，软件内默认视觉参数与该存档一致
 
-## 使用说明
-
-Windows 用户可以从本次发布公告列出的新网盘入口下载安装包。
-
-正式分发以 `Mineradio-2.2.0-Setup.exe` 为准，不建议直接使用 `win-unpacked` 目录。安装包会创建桌面快捷方式。
-
-已经安装过旧版本的用户可直接运行 `Mineradio-2.2.0-Setup.exe` 完成更新。软件内更新入口只会打开浏览器下载页，不会在客户端内下载或应用补丁。
-
 ## 开发运行
 
 ```bash
@@ -84,13 +56,21 @@ npm start
 npm run build:win
 ```
 
-桌面版入口由 Electron 主进程加载本地服务。`npm run build:win` 会生成 Windows NSIS 安装包，产物位于 `dist/`。
+桌面版入口由 Electron 主进程加载本地服务，Windows NSIS 安装包输出至 `dist/`。发布约定见 [发布说明](./RELEASE.md)。
 
 ## 更新机制
 
-Mineradio 会请求 GitHub Releases latest 检测新版本。远端版本高于本地版本时，应用内更新入口会展示 Release 内容，并通过系统浏览器打开可选网盘线路；即使 Release 附带完整安装包，`2.0.3+` 客户端也不会读取、下载、缓存或应用该附件与补丁。
+本维护版从 `zhe8013-bot/Mineradio-for-me` 的 GitHub Releases 检测新版本。远端版本高于本地版本时，应用内更新入口会展示发布说明，并通过系统浏览器打开下载页，由用户手动下载和安装。软件不会在客户端内下载或应用补丁。
 
-本地验证更新链路时，可以通过 `MINERADIO_UPDATE_MANIFEST` 指向一个本地 manifest JSON 或 HTTP 地址来模拟线上 Release。
+本地验证可通过 `MINERADIO_UPDATE_MANIFEST` 指向本地 manifest JSON 或 HTTP 地址模拟线上 Release。
+
+## 支持原作者
+
+如果 Mineradio 陪你多听了一首歌，也欢迎请原作者 XxHuberrr 一杯咖啡。以下支持页与收款渠道均属于原作者。
+
+[查看原作者支持页](./docs/SUPPORT.md)
+
+![Mineradio 原作者支持渠道](./docs/assets/support/mineradio-author-support-poster.png)
 
 ## 第三方音乐平台说明
 
@@ -106,7 +86,7 @@ Mineradio 不是网易云音乐、QQ 音乐或腾讯音乐娱乐集团的官方�
 
 ## 致谢
 
-Mineradio 由 XxHuberrr 主要设计与打造。emily 作为早期视觉底层想法与 `emily` 视觉预设改进方向的共创者和灵感来源之一，特此感谢。
+Mineradio 由 [XxHuberrr](https://github.com/XxHuberrr) 主要设计与打造；zhe8013-bot 负责本仓库的个人二创修改与维护。emily 作为早期视觉底层想法与 `emily` 视觉预设改进方向的共创者和灵感来源之一，特此感谢。
 
 同时感谢小天才e宝、应春日、锋将军、軌跡、林中、骊、风痕、花椰菜🥦在早期体验、测试反馈和发布准备中的帮助。
 

@@ -1,5 +1,9 @@
 # NOTICE
 
+## 原作与个人维护
+
+本仓库基于 [XxHuberrr/Mineradio-paused](https://github.com/XxHuberrr/Mineradio-paused) 的 Mineradio 2.2.0 进行二创维护。XxHuberrr 为原作作者和主要开发者；zhe8013-bot 负责本仓库的个人修改与维护，本版本为独立维护版本。保留原作者及社区贡献者的提交、版权与致谢，继续遵循 GPL-3.0-only 授权。
+
 Mineradio 使用了以下第三方项目或服务。各项目版权归其原作者所有。
 
 ## Third-party Libraries
@@ -26,7 +30,7 @@ Mineradio 不是任何音乐平台的官方客户端，也不隶属于网易云�
 
 ## Original Design
 
-Mineradio 名称、MR Logo、界面视觉设计、启动动画方向、粒子视觉体验和电影镜头系统的产品表达属于作者原创设计。
+Mineradio 名称、MR Logo、界面视觉设计、启动动画方向、粒子视觉体验和电影镜头系统的产品表达属于原作者 XxHuberrr 的原创设计。
 
 emily 作为 Mineradio 早期视觉底层想法与 `emily` 视觉预设改进方向的共创者和灵感来源之一，特此致谢。
 

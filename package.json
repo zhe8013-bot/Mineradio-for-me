@@ -1,9 +1,9 @@
 {
   "name": "mineradio",
   "productName": "Mineradio",
-  "version": "2.2.0",
-  "description": "Windows 沉浸式音乐播放器，融合桌面模式、歌词舞台、粒子视觉和 3D 歌单架。",
-  "author": "Mineradio",
+  "version": "2.2.1",
+  "description": "基于 XxHuberrr 原作的 Mineradio 个人二创维护版，保留沉浸式音乐播放、歌词舞台与桌面视觉体验。",
+  "author": "XxHuberrr",
   "license": "GPL-3.0-only",
   "main": "desktop/main.js",
   "private": true,
@@ -77,16 +77,16 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "XxHuberrr",
-        "repo": "Mineradio"
+        "owner": "zhe8013-bot",
+        "repo": "Mineradio-for-me"
       }
     ]
   },
   "mineradio": {
     "update": {
       "provider": "github",
-      "owner": "XxHuberrr",
-      "repo": "Mineradio",
+      "owner": "zhe8013-bot",
+      "repo": "Mineradio-for-me",
       "preview": false,
       "preferMirrors": true,
       "mirrors": [
