@@ -207,7 +207,7 @@ function applyFxFabAutoHideState(opts) {
   if (btn) {
     btn.classList.toggle('on', !!fxFabAutoHide);
     btn.textContent = fxFabAutoHide ? '›' : '‹';
-    btn.title = fxFabAutoHide ? '固定视觉控制台与入口' : '自动隐藏视觉控制台与入口';
+    btn.title = fxFabAutoHide ? '固定视觉控制台面板' : '自动隐藏面板，保留圆形入口';
   }
 }
 function toggleFxFabAutoHide(e) {
@@ -217,7 +217,7 @@ function toggleFxFabAutoHide(e) {
   fxPanelPinned = !fxFabAutoHide && !!(panel && (panel.classList.contains('peek') || panel.classList.contains('show')));
   saveBooleanPreference(FX_FAB_AUTO_HIDE_STORE_KEY, fxFabAutoHide);
   applyFxFabAutoHideState({ forceHidden: fxFabAutoHide });
-  showToast(fxFabAutoHide ? '视觉控制台与入口已自动隐藏' : '视觉控制台与入口已固定显示');
+  showToast(fxFabAutoHide ? '面板将自动隐藏，圆形入口保持显示' : '视觉控制台面板已固定显示');
 }
 function updateFxFabAutoHideFromPointer(x, y) {
   if (!fxFabAutoHide || !diyPlayerMode || immersiveMode) {

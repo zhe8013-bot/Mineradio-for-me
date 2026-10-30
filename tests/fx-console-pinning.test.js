@@ -25,3 +25,11 @@ test('fixed launcher click toggles the panel while explicit close remains availa
   assert.match(bindings, /fxPanelPinned = false;\s*if \(force === false\) \{/);
   assert.match(preferences, /fxPanelPinned = !fxFabAutoHide && !!\(panel && \(panel\.classList\.contains\('peek'\) \|\| panel\.classList\.contains\('show'\)\)\);/);
 });
+
+test('auto-hide keeps the circular launcher visible', () => {
+  const css = read('public/css/index.css');
+  const preferences = read('public/js/modules/00-state/02-preferences-ui-modes.js');
+
+  assert.doesNotMatch(css, /body\.fx-fab-auto-hide(?:\.fx-fab-peek)?\s+#fx-fab\s*\{/);
+  assert.match(preferences, /面板将自动隐藏，圆形入口保持显示/);
+});
