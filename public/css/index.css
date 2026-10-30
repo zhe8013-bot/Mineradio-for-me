@@ -3888,12 +3888,11 @@ body.desktop-shell.desktop-fullscreen #empty-home,
 html:fullscreen body.desktop-shell #empty-home {
   top: 96px;
   bottom: 52px;
-  width: min(1480px, calc(100vw - 96px))
+  width: calc(100vw - 44px)
 }
 
 body.desktop-shell.desktop-fullscreen .empty-home-shell,
 html:fullscreen body.desktop-shell .empty-home-shell {
-  max-width: 1480px;
   margin: 0 auto;
   grid-template-columns: minmax(380px, .92fr) minmax(560px, 1.08fr)
 }
