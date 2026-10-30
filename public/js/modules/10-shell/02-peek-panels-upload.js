@@ -429,8 +429,10 @@ window.addEventListener('mousemove', function (e) {
   var inFxFab = ex >= fabRect.left - 18 && ex <= fabRect.right + 18 && ey >= fabRect.top - 18 && ey <= fabRect.bottom + 18;
   var inFxBridge = fpOn && ex >= Math.min(fpRect.left, fabRect.left) - 18 && ex <= W && ey >= fpRect.bottom - 10 && ey <= fabRect.bottom + 18;
   if (!diyPlayerMode) inFxPanel = inFxFab = inFxBridge = false;
-  if (inFxFab || inFxPanel || inFxBridge) setPeek(fp, true, 'fx');
-  else if (fpOn && !fxPanelPinned) setPeek(fp, false, 'fx');
+  if (fxFabAutoHide) {
+    if (inFxFab || inFxPanel || inFxBridge) setPeek(fp, true, 'fx');
+    else if (fpOn && !fxPanelPinned) setPeek(fp, false, 'fx');
+  }
   // 歌单/队列 DOM 面板只在左侧明确停留时出现，避免和右侧 3D 架抢焦点
   var ppOn = isPlaylistPanelActiveState(pp);
   var ppRect = pp.getBoundingClientRect();
