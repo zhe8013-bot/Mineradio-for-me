@@ -1,4 +1,13 @@
 function bindFxPanel() {
+  var fab = document.getElementById('fx-fab');
+  if (fab && !fab.__fxPanelClickBound) {
+    fab.__fxPanelClickBound = true;
+    fab.addEventListener('click', function (e) {
+      if (fxFabAutoHide) return;
+      if (e && e.stopPropagation) e.stopPropagation();
+      toggleFxPanel();
+    });
+  }
   liftFxFloatingPopups();
   relabelFxPanelControls();
   organizeFxPanel();
@@ -483,6 +492,7 @@ function toggleFxPanel(force) {
     return;
   }
   var currentlyOpen = el.classList.contains('show') || el.classList.contains('peek');
+  if (force == null) force = !currentlyOpen;
   if (peekTimers && peekTimers.fx) { clearTimeout(peekTimers.fx); peekTimers.fx = null; }
   fxPanelPinned = false;
   if (force === false) {
