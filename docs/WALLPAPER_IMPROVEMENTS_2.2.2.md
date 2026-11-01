@@ -93,7 +93,7 @@ node scripts/check-wallpaper-scene-live.js --suite soak --variant default --minu
 
 ## 隐私、维护与限制
 
-GitHub 仅同步源码、测试、许可证与本说明；不包含账号、Cookie、歌单、配置、私人壁纸包、纹理、缓存或原始截图。同步目标是个人仓库 `Mineradio-for-me` 的 `main`，不创建功能分支，不发布公共安装包。
+源码、测试、许可证与本说明同步到个人仓库 `Mineradio-for-me` 的 `main`，不创建功能分支。经用户确认，2.2.2 安装包已发布到该仓库的 [正式 Release](https://github.com/zhe8013-bot/Mineradio-for-me/releases/tag/v2.2.2)，并附更新清单与文件校验值。发布内容不包含账号、Cookie、歌单、配置、私人壁纸包、纹理、缓存或原始截图。
 
 第三方来源、固定版本、补丁、许可证和重构建方法见 [THIRD_PARTY_PORTS.md](THIRD_PARTY_PORTS.md)。内置渲染器有安全沙箱与资源预算，但复杂场景仍可能占用较多 GPU/内存。
 
