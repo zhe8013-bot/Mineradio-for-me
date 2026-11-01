@@ -9,6 +9,7 @@ function harness() {
   const pending = new Promise(yes => { resolve = yes; });
   const calls = [];
   const listeners = {};
+  const documentListeners = {};
   const posted = [];
   let fallbacks = 0;
   const rafs = [];
@@ -19,14 +20,47 @@ function harness() {
     wallpaperEngineCaptureFpsPreference: () => 0, wallpaperEngineResolvedCaptureFps: value => value || 240,
     startWallpaperEngineExternalBackground: async () => { fallbacks++; },
     MessageChannel: function () { this.port1 = { start() {}, close() {}, postMessage(message) { posted.push(message); } }; this.port2 = {}; },
-    document: { body: { classList: classes }, addEventListener() {}, getElementById: () => ({ classList: classes, appendChild() {} }), createElement: () => ({ contentWindow: { postMessage(message) { posted.push(message); } }, setAttribute() {}, remove() { calls.push('removed'); } }) },
+    document: { body: { classList: classes }, addEventListener(name, fn) { documentListeners[name] = fn; }, removeEventListener(name) { delete documentListeners[name]; }, getElementById: () => ({ classList: classes, appendChild() {} }), createElement: () => ({ contentWindow: { postMessage(message) { posted.push(message); } }, setAttribute() {}, remove() { calls.push('removed'); } }) },
     window: { desktopWindow: { wallpaperSceneResources(payload) { calls.push(payload); return payload.action === 'open' ? pending : Promise.resolve({ ok: true }); } } },
     wallpaperEngineLayerToken: 1, wallpaperEngineSelection: { active: true, id: 'first' } };
   context.window.addEventListener = (name, fn) => { listeners[name] = fn; };
   context.window.removeEventListener = () => {};
   vm.createContext(context); vm.runInContext(source, context);
-  return { context, calls, resolve, listeners, posted, rafs, fallbacks: () => fallbacks };
+  return { context, calls, resolve, listeners, documentListeners, posted, rafs, fallbacks: () => fallbacks };
 }
+
+for (const frameHidden of [false, true]) for (const suspended of [false, true]) test('occluded startup counts visible time, suspended=' + suspended + ', frame=' + frameHidden, async () => {
+  const h = harness(), c = h.context;
+  let now = 0, tick, failure;
+  c.Date = { now: () => now };
+  c.setInterval = callback => { tick = callback; return 1; };
+  c.clearInterval = () => {};
+  c.document.hidden = !frameHidden;
+  const loading = c.startWallpaperScene({ id: 'first' }, 1).catch(error => { failure = error; });
+  h.resolve({ ok: true, sessionId: 'session' });
+  await new Promise(setImmediate);
+  let receive;
+  if (frameHidden) {
+    const frame = c.wallpaperSceneSession.frame;
+    h.listeners.message({ source: frame.contentWindow, data: { type: 'mineradio-scene-host', nonce: new URL(frame.src, 'http://localhost').searchParams.get('nonce') } });
+    receive = c.wallpaperSceneSession.port.onmessage;
+    receive({ data: { type: 'frame-visibility', visible: false } });
+  }
+  now = 11000; if (!suspended) tick();
+  await new Promise(setImmediate);
+  assert.equal(failure, undefined, 'Covered window must not exhaust the first-frame timeout');
+  c.document.hidden = false;
+  h.documentListeners.visibilitychange();
+  if (receive) receive({ data: { type: 'frame-visibility', visible: true } });
+  now += 250; tick();
+  await new Promise(setImmediate);
+  assert.equal(failure, undefined);
+  now += 10000; tick();
+  await loading;
+  assert.match(failure.message, /SCENE_FIRST_FRAME_TIMEOUT/);
+  assert.equal(h.documentListeners.visibilitychange, undefined);
+  c.stopWallpaperScene();
+});
 test('cancellation during resource open revokes the late session', async () => {
   const { context: c, calls, resolve } = harness();
   const loading = c.startWallpaperScene({ id: 'first' }, 1);

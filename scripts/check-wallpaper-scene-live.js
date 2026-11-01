@@ -29,8 +29,8 @@ if (!process.versions.electron) {
   })().catch(error => { console.error(error); process.exitCode = 1; });
   return;
 }
-const { app, session } = require('electron');
-if (suite === 'soak') {
+const { app, session, BrowserWindow } = require('electron');
+if (suite === 'soak' || suite === 'benchmark') {
   // Stress the renderer while other test windows cover it; production keeps normal throttling.
   for (const flag of ['disable-backgrounding-occluded-windows', 'disable-renderer-backgrounding', 'disable-background-timer-throttling']) app.commandLine.appendSwitch(flag);
 }
@@ -99,7 +99,7 @@ async function frameInfo() {
   const frame = sceneFrame();
   assert(frame, 'Scene frame missing');
   return frame.executeJavaScript(`(() => { const instance = window.__sceneAcceptanceInstance; const canvas = document.querySelector('canvas'); return {
-    canvas: canvas && [canvas.width, canvas.height], dpr: devicePixelRatio,
+    canvas: canvas && [canvas.width, canvas.height], dpr: devicePixelRatio, hidden: document.hidden,
     stats: instance && instance.stats, quality: instance && instance.getQuality()
   }; })()`);
 }
@@ -172,6 +172,20 @@ async function lifecycle(item) {
   result.lifecycle.switches = cycles;
   await evaluate('deactivateWallpaperEngineBackground(true); void 0;');
   await wait(300); assert.equal(activeResources.size, 0);
+  const cover = new BrowserWindow({ ...win.getBounds(), frame: false, alwaysOnTop: true, backgroundColor: '#111111', webPreferences: { sandbox: true } });
+  try {
+    await cover.loadURL('about:blank');
+    await wait(1200);
+    await evaluate(`activateWallpaperEngineItem(${JSON.stringify(item.id)}); void 0;`);
+    await wait(1200);
+    result.lifecycle.occlusionState = { parentVisible: (await snapshot()).visible, frame: await frameInfo() };
+    await wait(11000);
+    assert.equal(result.nativeStarts, 0, 'Occluded startup triggered external fallback');
+  } finally { cover.destroy(); }
+  win.show(); win.focus();
+  await waitReady(item.id);
+  result.lifecycle.coveredStartup = true;
+  await evaluate('deactivateWallpaperEngineBackground(true); void 0;');
   win.minimize(); await wait(400);
   await evaluate(`activateWallpaperEngineItem(${JSON.stringify(item.id)}); void 0;`);
   await wait(11000);

@@ -45,13 +45,15 @@ async function startWallpaperScene(item, token) {
   await new Promise(function (resolve, reject) {
     var queue = [], running = 0;
     var lastTick = Date.now(), visibleMs = 0;
+    function visibilityChanged() { lastTick = Date.now(); }
+    document.addEventListener('visibilitychange', visibilityChanged);
     var timer = setInterval(function () {
       var now = Date.now();
-      if (current.visible) visibleMs += now - lastTick;
+      if (current.visible && !document.hidden && current.frameVisible !== false) visibleMs += now - lastTick;
       lastTick = now;
       if (visibleMs >= 10000) fail(new Error('SCENE_FIRST_FRAME_TIMEOUT'));
     }, 250);
-    function finish() { clearInterval(timer); window.removeEventListener('message', connect); }
+    function finish() { clearInterval(timer); document.removeEventListener('visibilitychange', visibilityChanged); window.removeEventListener('message', connect); }
     current.cancel = function () { finish(); reject(new Error('WALLPAPER_ENGINE_START_SUPERSEDED')); };
     function fail(error) {
       if (current.failed || !valid()) return;
@@ -89,7 +91,10 @@ async function startWallpaperScene(item, token) {
       current.port.onmessage = function (event) {
         if (!valid()) return;
         var message = event.data || {};
-        if (message.type === 'read') {
+        if (message.type === 'frame-visibility') {
+          current.frameVisible = message.visible === true;
+          lastTick = Date.now();
+        } else if (message.type === 'read') {
           if (queue.length >= 128) { fail(new Error('SCENE_REQUEST_LIMIT')); return; }
           queue.push(message); pump();
         } else if (message.type === 'diagnostic') {

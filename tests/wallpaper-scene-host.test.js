@@ -5,15 +5,23 @@ const fs = require('node:fs');
 const source = fs.readFileSync(require.resolve('../public/wallpaper-scene-host.js'), 'utf8');
 function harness() {
   const parent = { postMessage() {} }, calls = [], sent = [];
-  let listener, finish;
+  let listener, finish, visibilityChanged;
   const instance = { info: {}, getQuality: () => ({}), pause: () => calls.push('pause'), resume: () => calls.push('resume'), destroy: () => calls.push('destroy'), setFps: value => calls.push(['fps', value]), setRenderDpr: value => calls.push(['dpr', value]) };
   const pending = new Promise(resolve => { finish = () => resolve(instance); });
   const port = { postMessage: value => sent.push(value), start() {}, close() {} };
-  const context = { URLSearchParams, location: { search: '?nonce=test' }, parent, performance: { now: () => 0 }, document: { body: {} }, addEventListener(_name, callback) { listener = callback; }, removeEventListener() {}, WebWallGL: { mount: () => pending } };
+  const context = { URLSearchParams, location: { search: '?nonce=test' }, parent, performance: { now: () => 0 }, document: { body: {}, hidden: true, addEventListener(_name, callback) { visibilityChanged = callback; } }, addEventListener(_name, callback) { listener = callback; }, removeEventListener() {}, WebWallGL: { mount: () => pending } };
   vm.runInNewContext(source, context);
   const connected = listener({ source: parent, data: { nonce: 'test', config: { fps: 120, dpr: 1, visible: true, project: {} } }, ports: [port] });
-  return { port, finish, connected, calls, sent };
+  return { port, finish, connected, calls, sent, show() { context.document.hidden = false; visibilityChanged(); } };
 }
+
+test('host reports its own visibility before mounting and on change', async () => {
+  const h = harness();
+  assert(h.sent.some(x => x.type === 'frame-visibility' && !x.visible));
+  h.show();
+  assert(h.sent.some(x => x.type === 'frame-visibility' && x.visible));
+  h.finish(); await h.connected;
+});
 test('host remembers visibility and render updates received while mounting', async () => {
   const h = harness();
   h.port.onmessage({ data: { type: 'visibility', visible: false } });

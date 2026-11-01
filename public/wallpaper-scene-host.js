@@ -47,6 +47,9 @@
       }
     };
     port.start();
+    const reportVisibility = () => send({ type: 'frame-visibility', visible: !document.hidden });
+    document.addEventListener('visibilitychange', reportVisibility);
+    reportVisibility();
     globalThis.__mineradioAssetFetch = async url => {
       if (url === '/api/local-assets') return new Response(JSON.stringify({ ok: config.hasBuiltins, roots: [{ id: 'local' }] }));
       if (url === '/api/local-assets/local/materials/index.json') return new Response(JSON.stringify({ names: config.builtinNames }));
