@@ -35,3 +35,13 @@ Mineradio 名称、MR Logo、界面视觉设计、启动动画方向、粒子视
 emily 作为 Mineradio 早期视觉底层想法与 `emily` 视觉预设改进方向的共创者和灵感来源之一，特此致谢。
 
 感谢小天才e宝、应春日、锋将军、軌跡、林中、骊、风痕、花椰菜🥦在早期体验、测试反馈和发布准备中的帮助。
+
+## Embedded Scene wallpaper playback (experimental)
+
+WebWallGL 3.0.0, revision 197abe54266c31d346cebc314e49a26b70c960cc,
+is available under MIT, with the vendored we-scene renderer under MIT.
+The playback bundle includes mediabunny 1.56.0 under MPL-2.0.
+License texts and exact source information are in public/vendor/webwallgl/.
+Corresponding mediabunny source: https://registry.npmjs.org/mediabunny/-/mediabunny-1.56.0.tgz
+Wallpaper Engine installation assets and users' wallpaper packages are read locally
+when available and are not included in this distribution.

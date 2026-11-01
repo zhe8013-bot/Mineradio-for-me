@@ -1,0 +1,21 @@
+const assert = require('node:assert/strict');
+const { patchMountOptions } = require('../scripts/wallpaper-scene-vendor-patch');
+
+const input = 'const base = {\n    quality: o.quality,\n    scripts: o.scripts !== false,\n  };';
+const patched = patchMountOptions(input);
+const resolve = new Function('o', patched + '\nreturn base;');
+const result = resolve({ autoQuality: false, bake: false, quality: { particles: 'high' } });
+assert.equal(result.autoQuality, false);
+assert.equal(result.bake, false);
+assert.equal(result.quality.particles, 'high');
+assert.equal(patchMountOptions(patched), patched);
+assert.throws(() => patchMountOptions('upstream changed'), /Unsupported/);
+console.log('Wallpaper Scene vendor option forwarding passed');
+const { patchLocalAssets } = require('../scripts/wallpaper-scene-vendor-patch');
+const bridged = patchLocalAssets('const BASE = "/api/local-assets";\nconst response = fetch(BASE);');
+assert.match(bridged, /response = mineradioAssetFetch\(BASE\)/);
+assert.equal(patchLocalAssets(bridged), bridged);
+assert.throws(() => patchLocalAssets('changed'), /Unsupported/);
+const strict = patchLocalAssets('const BASE = "/api/local-assets";\nexport async function ensureLocalAsset(name: string): Promise<boolean> {\n  const px = await loadOne(name);\n  if (!px) return false;\n}');
+assert.match(strict, /SCENE_STOCK_TEXTURE_MISSING/);
+assert.match(strict, /SCENE_STOCK_TEXTURE_DECODE_FAILED/);

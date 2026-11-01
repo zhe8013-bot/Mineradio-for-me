@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/oneincase/webwallgl",
+  "revision": "197abe54266c31d346cebc314e49a26b70c960cc",
+  "sha256": "5e4eaf289d7a96c08e9fd492404ada6a68a04c71c6fe8fb81d4111d3d5083c63",
+  "patches": [
+    "mount options autoQuality/bake forwarding",
+    "module-local asset fetch routed through isolated host bridge",
+    "required stock textures fail closed when missing or undecodable"
+  ],
+  "mediabunny": {
+    "version": "1.56.0",
+    "license": "MPL-2.0",
+    "source": "https://registry.npmjs.org/mediabunny/-/mediabunny-1.56.0.tgz"
+  }
+}

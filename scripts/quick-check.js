@@ -196,16 +196,17 @@ function runWallpaperEngineWin10YellowBorderRegressionCheck() {
 }
 
 function runWallpaperEngineRenderVisibilityRegressionCheck() {
-  logStep('Wallpaper Engine render visibility regression');
+  logStep('Wallpaper Engine render visibility and startup regression');
   const testFile = path.join(appRoot, 'tests', 'wallpaper-engine-render-visibility.test.js');
-  const result = spawnSync(process.execPath, [testFile], {
+  const startupTestFile = path.join(appRoot, 'tests', 'wallpaper-engine-startup.test.js');
+  const result = spawnSync(process.execPath, ['--test', testFile, startupTestFile], {
     cwd: appRoot,
     encoding: 'utf8'
   });
   if (result.status !== 0) {
     process.stdout.write(result.stdout || '');
     process.stderr.write(result.stderr || '');
-    fail(`Wallpaper Engine render visibility regression failed: ${rel(testFile)}`);
+    fail('Wallpaper Engine render visibility or startup regression failed');
   }
   process.stdout.write(result.stdout || '');
 }
@@ -5650,6 +5651,11 @@ async function main() {
   runWallpaperEngineMinimizeResidentRegressionCheck();
   runWallpaperEngineRenderVisibilityRegressionCheck();
   runWallpaperEngineWin10YellowBorderRegressionCheck();
+  for (const file of ['wallpaper-scene-resources.test.js', 'wallpaper-scene-lifecycle.test.js', 'wallpaper-scene-host.test.js', 'wallpaper-scene-vendor.test.js', 'wallpaper-scene-acceptance.test.js']) {
+    const result = spawnSync(process.execPath, [path.join(appRoot, 'tests', file)], { cwd: appRoot, encoding: 'utf8' });
+    if (result.status !== 0) fail(`${file}: ${result.stderr || result.stdout}`);
+    process.stdout.write(result.stdout || '');
+  }
   runGestureCameraPermissionRegressionCheck();
   runGesturePlayerActionsRegressionCheck();
   runGestureRuntimeLifecycleRegressionCheck();

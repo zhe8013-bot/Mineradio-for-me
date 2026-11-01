@@ -8,6 +8,7 @@ const { execFile, spawn } = require('child_process');
 const systemMemory = require('./system-memory');
 const {
   WallpaperEngineLibrary,
+  discoverSteamLibraries,
   registerWallpaperEngineScheme,
 } = require('./wallpaper-engine-library');
 const {
@@ -164,6 +165,10 @@ const localMusicLibrary = new LocalMusicLibrary({ userDataPath: STABLE_USER_DATA
 const builtInPlaylistLibrary = new BuiltInPlaylistLibrary({ userDataPath: STABLE_USER_DATA_PATH });
 const localMusicImportCapabilities = new Map();
 const wallpaperEngineLibrary = new WallpaperEngineLibrary({ userDataPath: STABLE_USER_DATA_PATH });
+const { SceneResources } = require('./wallpaper-scene-resources');
+const sceneResources = new SceneResources(wallpaperEngineLibrary, discoverSteamLibraries);
+const embeddedScenesEnabled = process.env.MINERADIO_EMBEDDED_SCENE === '1'
+  || (process.env.MINERADIO_EMBEDDED_SCENE !== '0' && APP_METADATA.embeddedScene === true);
 const wallpaperEngineRuntime = new WallpaperEngineRuntime({
   library: wallpaperEngineLibrary,
   desktopCapturer,
@@ -4178,12 +4183,31 @@ ipcMain.handle('mineradio-cache-set-settings', async (_event, payload = {}) => {
 ipcMain.handle('mineradio-wallpaper-engine-list', async (event, payload = {}) => {
   try {
     if (!isTrustedWallpaperEngineIpc(event)) return { ok: false, projects: [], count: 0, error: 'WALLPAPER_ENGINE_UNTRUSTED_CALLER' };
-    const snapshot = await wallpaperEngineLibrary.list({ force: payload && payload.force === true });
-    const runtime = await wallpaperEngineRuntime.probe(payload && payload.force === true);
+    const startedAt = Date.now();
+    const [snapshot, runtime] = await Promise.all([
+      wallpaperEngineLibrary.list({ force: payload && payload.force === true }),
+      (embeddedScenesEnabled ? Promise.resolve({ available: true, embeddedScenes: true }) : wallpaperEngineRuntime.probe(payload && payload.force === true)).finally(() => {
+        console.debug('[Wallpaper Engine Startup]', JSON.stringify({ stage: 'runtime-probe', elapsedMs: Date.now() - startedAt }));
+      }),
+    ]);
+    console.debug('[Wallpaper Engine Startup]', JSON.stringify({ stage: 'library-scan', elapsedMs: snapshot.elapsedMs }));
     return { ...snapshot, runtime };
   } catch (error) {
     return { ok: false, projects: [], count: 0, error: error.message || 'WALLPAPER_ENGINE_SCAN_FAILED' };
   }
+});
+
+ipcMain.handle('mineradio-wallpaper-scene-resources', async (event, payload = {}) => {
+  if (!embeddedScenesEnabled || !isTrustedWallpaperEngineIpc(event)) return { ok: false, error: 'SCENE_UNTRUSTED_CALLER' };
+  try {
+    const displayFps = () => wallpaperEngineTargetFps(screen.getDisplayMatching(mainWindow.getBounds()), 0);
+    if (payload.action === 'open') return { ok: true, ...await sceneResources.open(String(payload.id || '')), displayFps: displayFps() };
+    if (payload.action === 'display') return { ok: true, displayFps: displayFps() };
+    if (payload.action === 'close') { sceneResources.close(payload.sessionId); return { ok: true }; }
+    if (payload.action === 'index') return { ok: true, names: await sceneResources.builtinNames(payload.sessionId) };
+    if (payload.action === 'read') return { ok: true, bytes: await sceneResources.read(payload.sessionId, payload.namespace, payload.path) };
+    return { ok: false, error: 'SCENE_ACTION_INVALID' };
+  } catch (error) { return { ok: false, error: error.message }; }
 });
 
 ipcMain.handle('mineradio-wallpaper-engine-project-details', async (event, id) => {
@@ -5649,13 +5673,20 @@ async function createWindowOnce() {
     event.preventDefault();
     if (/^https?:\/\//i.test(String(url || ''))) shell.openExternal(url).catch(() => {});
   });
+  win.webContents.on('will-frame-navigate', details => {
+    const frameUrl = details.frame && details.frame.url || '';
+    const initiatorUrl = details.initiator && details.initiator.url || '';
+    if (/\/wallpaper-scene\.html(?:[?#]|$)/.test(frameUrl) || /\/wallpaper-scene\.html(?:[?#]|$)/.test(initiatorUrl)) details.preventDefault();
+  });
   win.webContents.on('did-start-navigation', (_event, url, isInPlace, isMainFrame) => {
     if (!isMainFrame || isInPlace || !isTrustedMainDocumentUrl(url)) return;
+    sceneResources.closeAll();
     win.__mineradioTrustedMainDocumentReady = null;
     stopWallpaperEngineRuntimeForRenderer('main-frame-navigation');
     closeWallpaperWindow('main-frame-navigation').catch(() => {});
   });
   win.webContents.once('destroyed', () => {
+    sceneResources.closeAll();
     stopWallpaperEngineRuntimeForRenderer('webcontents-destroyed');
     closeWallpaperWindow('webcontents-destroyed').catch(() => {});
   });
@@ -5985,6 +6016,7 @@ if (!gotSingleInstanceLock) {
   });
 
   app.on('before-quit', (event) => {
+    sceneResources.closeAll();
     appQuitting = true;
     if (appQuitCleanupComplete) return;
     event.preventDefault();

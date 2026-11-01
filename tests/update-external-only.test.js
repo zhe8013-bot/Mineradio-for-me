@@ -26,7 +26,7 @@ function serverFunctionSource(name, nextName) {
 }
 
 test('release update metadata accepts only a bounded HTTPS external page', () => {
-  assert.equal(packageData.version, '2.2.1');
+  assert.equal(packageData.version, '2.2.2');
   assert.equal(packageData.mineradio.update.owner, 'zhe8013-bot');
   assert.equal(packageData.mineradio.update.repo, 'Mineradio-for-me');
   assert.equal(packageData.mineradio.update.preview, false);

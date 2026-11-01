@@ -1041,7 +1041,8 @@ async function main() {
     await lateElevationStarted;
     const lateSessionId = lateOpenRuntime.pending && lateOpenRuntime.pending.sessionId;
     assert(lateSessionId, 'the delayed initial open must remain addressable as the pending session');
-    assert(lateOpenRuntime.pending.initialOpenPromise, 'the delayed initial open promise must be registered before stop can observe the pending session');
+    assert(lateOpenRuntime.pending.preparationPromise || lateOpenRuntime.pending.initialOpenPromise,
+      'pending preparation or initial open must be tracked before elevation detection can block startup');
     let lateStopResolved = false;
     const lateStopPromise = lateOpenRuntime.stop(lateSessionId).then((result) => {
       assert.strictEqual(lateOpenSpawns.length, 0, 'stop must not resolve until the stale initial open has been suppressed');

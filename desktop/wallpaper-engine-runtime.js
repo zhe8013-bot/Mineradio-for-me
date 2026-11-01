@@ -1661,7 +1661,9 @@ class WallpaperEngineRuntime {
       ? options.hostElevationProbe
       : (async () => null);
     this.hostElevationCache = null;
+    this.hostElevationPromise = null;
     this.signatureCache = new Map();
+    this.startingSessions = new Set();
     this.executableCache = null;
     this.executableDiscoveryPromise = null;
     this.engineBootstrapPromise = null;
@@ -2890,6 +2892,7 @@ class WallpaperEngineRuntime {
   }
 
   async _cleanupStagedProject(session) {
+    if (session && session.stagedProjectCleanupPromise) return session.stagedProjectCleanupPromise;
     if (!session || !session.stagedProjectRoot || !session.stagedProjectBaseRoot) return;
     const stageRoot = path.resolve(session.stagedProjectBaseRoot || '');
     const stageDirectory = path.resolve(session.stagedProjectRoot);
@@ -2899,10 +2902,14 @@ class WallpaperEngineRuntime {
     session.stagedProjectFile = '';
     session.stagedAudioPropertyCount = 0;
     if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) return;
-    try {
-      await fs.promises.rm(stageDirectory, { recursive: true, force: true });
-    } catch (error) {
+    const cleanup = fs.promises.rm(stageDirectory, { recursive: true, force: true }).catch((error) => {
       console.warn('[Wallpaper Engine] silent Scene stage cleanup deferred:', error && error.message || error);
+    });
+    session.stagedProjectCleanupPromise = cleanup;
+    try {
+      await cleanup;
+    } finally {
+      session.stagedProjectCleanupPromise = null;
     }
   }
 
@@ -2911,6 +2918,17 @@ class WallpaperEngineRuntime {
       && !this.disposed
       && session.stopping !== true
       && (this.pending === session || this.active === session);
+  }
+
+  async _measureStartupStage(session, stage, operation) {
+    const startedAt = this.now();
+    try {
+      return await operation();
+    } finally {
+      console.debug('[Wallpaper Engine Startup]', JSON.stringify({
+        sessionId: session.sessionId, stage, elapsedMs: Math.max(0, this.now() - startedAt),
+      }));
+    }
   }
 
   _clearSessionMuteReassertions(session) {
@@ -2996,16 +3014,22 @@ class WallpaperEngineRuntime {
     const session = this.active;
     expectedSessionId = String(expectedSessionId || '');
     if (!session || (expectedSessionId && session.sessionId !== expectedSessionId)) return false;
-    const muted = await this._applySessionMute(session);
-    if (!muted || this.active !== session || session.stopping === true) return false;
+    if (session.audioMuted !== true || session.stopping === true) return false;
     if (!session.windowEmbedding || session.windowEmbedding.aligned !== true) return false;
     // Keep the native WE source physically aligned behind Mineradio so the
     // engine continues to read the real Windows cursor. DWM mirrors that live
     // surface into a click-through helper directly beneath the transparent
     // Electron host; unlike Chromium window capture, it does not bake a second
     // delayed cursor into the picture.
-    const surfaceReady = await this._startSessionDwmSurface(session).catch(() => false);
-    if (!surfaceReady || this.active !== session || session.stopping === true
+    // The initial mute is already acknowledged. Join both tasks before failure
+    // cleanup so a late helper cannot outlive this readiness attempt.
+    const [mute, surface] = await Promise.allSettled([
+      this._measureStartupStage(session, 'final-mute', () => this._applySessionMute(session)),
+      this._measureStartupStage(session, 'dwm-surface', () => this._startSessionDwmSurface(session)),
+    ]);
+    if (mute.status === 'rejected') throw mute.reason;
+    if (!mute.value || surface.status === 'rejected' || !surface.value
+      || this.active !== session || session.stopping === true
       || session.dwmSurfaceReady !== true) return false;
     this._stopSessionPointerRelay(session);
     session.windowParking = null;
@@ -3319,12 +3343,21 @@ class WallpaperEngineRuntime {
 
   async _hostIsElevated() {
     if (this.hostElevationCache !== null) return this.hostElevationCache;
+    if (this.hostElevationPromise) return this.hostElevationPromise;
+    const probe = (async () => {
+      try {
+        this.hostElevationCache = await this.hostElevationProbe() !== false;
+      } catch (_) {
+        this.hostElevationCache = true;
+      }
+      return this.hostElevationCache;
+    })();
+    this.hostElevationPromise = probe;
     try {
-      this.hostElevationCache = await this.hostElevationProbe() !== false;
-    } catch (_) {
-      this.hostElevationCache = true;
+      return await probe;
+    } finally {
+      this.hostElevationPromise = null;
     }
-    return this.hostElevationCache;
   }
 
   async _spawnControlViaDesktopShell(executable, args, options = {}) {
@@ -3690,7 +3723,7 @@ class WallpaperEngineRuntime {
     }
     if (session.embedPromise) return session.embedPromise;
     const generation = this.generation;
-    const operation = (async () => {
+    const operation = this._measureStartupStage(session, 'window-calibration', async () => {
       let embedding = await this._controlSessionWindow('embed', session, String(session.sourceId || ''), host);
       for (let attempt = 0; attempt < 3 && embedding.aligned !== true; attempt += 1) {
         const hostWidth = Math.max(1, Number(embedding.hostRight) - Number(embedding.hostLeft));
@@ -3722,7 +3755,7 @@ class WallpaperEngineRuntime {
       session.dwmSurfaceDesktopIconLayering = host.desktopIconLayering === true;
       session.captureAttached = true;
       return this._publicSession(session);
-    })();
+    });
     session.embedPromise = operation;
     try {
       return await operation;
@@ -3761,6 +3794,8 @@ class WallpaperEngineRuntime {
 
   async _closeSession(session) {
     if (!session) return false;
+    // Staging can finish after cancellation and still create its directory.
+    if (session.preparationPromise) await session.preparationPromise;
     if (!session.executable || !session.locationTitle) {
       this._stopSessionPointerRelay(session);
       this._stopSessionDwmSurface(session);
@@ -3862,6 +3897,7 @@ class WallpaperEngineRuntime {
       launched: false,
       initialOpenIssued: false,
       initialOpenPromise: null,
+      preparationPromise: null,
       sourceRefreshToken: 0,
       audioMuted: false,
       audioPropertySuppressed: false,
@@ -3870,6 +3906,7 @@ class WallpaperEngineRuntime {
       stagedProjectRoot: '',
       stagedProjectBaseRoot: '',
       stagedProjectFile: '',
+      stagedProjectCleanupPromise: null,
       stagedAudioPropertyCount: 0,
       patchedSceneAudioObjectCount: 0,
       mutedScenePackageCacheFile: '',
@@ -3933,6 +3970,7 @@ class WallpaperEngineRuntime {
       closePromise: null,
       stopping: false,
     };
+    this.startingSessions.add(session);
     this.pending = session;
     let startStage = 'discover-target';
 
@@ -3959,16 +3997,24 @@ class WallpaperEngineRuntime {
       }
       if (generation !== this.generation || this.disposed) throw runtimeError('WALLPAPER_ENGINE_START_SUPERSEDED');
 
-      startStage = 'ensure-engine-ready';
-      session.executable = await this._ensureEngineReady(installation.executable);
-      if (generation !== this.generation || this.disposed || this.pending !== session) {
+      session.muteProperties = sanitizeMuteProperties(target && target.muteProperties);
+      startStage = 'prepare-engine-and-silent-project';
+      session.preparationPromise = Promise.allSettled([
+        this._measureStartupStage(session, 'engine-ready', () => this._ensureEngineReady(installation.executable)),
+        this._measureStartupStage(session, 'silent-project', () => projectStat
+          ? this._prepareSilentLaunchFile(session, projectFile, scenePackage) : scenePackage),
+        this.useDesktopShellBroker
+          ? this._measureStartupStage(session, 'host-elevation', () => this._hostIsElevated()) : null,
+      ]);
+      const [engine, staged] = await session.preparationPromise;
+      session.preparationPromise = null;
+      if (generation !== this.generation || this.disposed || this.pending !== session || session.stopping === true) {
         throw runtimeError('WALLPAPER_ENGINE_START_SUPERSEDED');
       }
-      session.muteProperties = sanitizeMuteProperties(target && target.muteProperties);
-      startStage = 'prepare-silent-project';
-      session.launchFile = projectStat
-        ? await this._prepareSilentLaunchFile(session, projectFile, scenePackage)
-        : scenePackage;
+      if (engine.status === 'rejected') throw engine.reason;
+      if (staged.status === 'rejected') throw staged.reason;
+      session.executable = engine.value;
+      session.launchFile = staged.value;
       const previous = this.active;
       if (previous && previous.sessionId !== session.sessionId) {
         startStage = 'close-previous-window';
@@ -4029,6 +4075,8 @@ class WallpaperEngineRuntime {
       }
       if (error && error.code) throw error;
       throw runtimeError('WALLPAPER_ENGINE_START_FAILED');
+    } finally {
+      this.startingSessions.delete(session);
     }
   }
 
@@ -4039,7 +4087,8 @@ class WallpaperEngineRuntime {
     expectedSessionId = String(expectedSessionId || '');
     const matchesPending = !!(this.pending && this.pending.sessionId === expectedSessionId);
     const matchesActive = !!(this.active && this.active.sessionId === expectedSessionId);
-    if (expectedSessionId && !matchesPending && !matchesActive) {
+    const matchesStarting = [...this.startingSessions].some((session) => session.sessionId === expectedSessionId);
+    if (expectedSessionId && !matchesPending && !matchesActive && !matchesStarting) {
       return { ok: true, stopped: false, reason: 'WALLPAPER_ENGINE_SESSION_MISMATCH' };
     }
 
@@ -4054,6 +4103,10 @@ class WallpaperEngineRuntime {
     } else {
       if (this.pending) sessions.push(this.pending);
       if (this.active && (!this.pending || this.active.sessionId !== this.pending.sessionId)) sessions.push(this.active);
+    }
+    // A newer start can replace pending while the old session is still staging.
+    for (const session of this.startingSessions) {
+      if ((!expectedSessionId || session.sessionId === expectedSessionId) && !sessions.includes(session)) sessions.push(session);
     }
     if (!sessions.length) return { ok: true, stopped: false, active: !!this.active, sessionId: this.active ? this.active.sessionId : '' };
     // A targeted stop of the old active session must not supersede a newer
@@ -4092,16 +4145,17 @@ class WallpaperEngineRuntime {
 
   async dispose() {
     if (this.disposed) {
+      const clean = !this.active && !this.pending && this.startingSessions.size === 0;
       return {
-        ok: !this.active && !this.pending,
-        stopped: !this.active && !this.pending,
+        ok: clean,
+        stopped: clean,
         active: !!this.active,
         sessionId: this.active ? this.active.sessionId : '',
-        reason: this.active || this.pending ? 'WALLPAPER_ENGINE_WINDOW_CLOSE_FAILED' : '',
+        reason: clean ? '' : 'WALLPAPER_ENGINE_WINDOW_CLOSE_FAILED',
       };
     }
     this.disposed = true;
-    const isClean = () => !this.active && !this.pending;
+    const isClean = () => !this.active && !this.pending && this.startingSessions.size === 0;
     let result = await this.stop();
     if ((!result || result.stopped !== true) && !isClean()) {
       await this.nativeSleep(180);

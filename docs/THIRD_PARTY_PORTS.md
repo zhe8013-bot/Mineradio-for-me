@@ -1,5 +1,23 @@
 # Third-party ports
 
+## Embedded Scene playback (experimental)
+
+- Upstream: https://github.com/oneincase/webwallgl
+- Revision: `197abe54266c31d346cebc314e49a26b70c960cc` (3.0.0)
+- Licenses: MIT (WebWallGL and we-scene); MPL-2.0 (inline mediabunny 1.56.0).
+- Build: `node scripts/build-wallpaper-scene-vendor.mjs <fixed-source-checkout>`
+  after installing its frozen lockfile with install scripts disabled.
+- Local patches forward `autoQuality` / `bake` and route the local-assets
+  module's requests through the sandbox's restricted resource bridge.
+
+Only playback code is shipped. The editor and desktop application are excluded.
+Exact sources and bundle hash are recorded in `public/vendor/webwallgl/SOURCE.json`.
+Mediabunny corresponding source is linked there; all three license texts accompany
+the playback bundle. Wallpaper packages and official shared assets remain local.
+Packaged metadata enables embedded Scene playback on normal launches after
+acceptance. `MINERADIO_EMBEDDED_SCENE=0` keeps the external backend available
+for diagnostics and rollback without changing user settings.
+
 ## Cuefield AutoMix transition planner/runtime
 
 - Upstream: `SLYysl/cuefield-mineradio`

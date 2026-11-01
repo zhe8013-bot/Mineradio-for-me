@@ -5,6 +5,7 @@ var wallpaperEngineProjects = [];
 var wallpaperEngineLibrarySnapshot = null;
 var wallpaperEngineMediaToken = '';
 var wallpaperEngineLibraryBusy = false;
+var wallpaperEngineLibraryPromise = null;
 var wallpaperEngineLayerToken = 0;
 var wallpaperEnginePreviewObserver = null;
 var wallpaperEngineSearchRenderTimer = 0;
@@ -621,6 +622,10 @@ function wallpaperEngineRuntimeCaptureFps() {
 }
 
 async function syncWallpaperEngineCaptureFrameRate() {
+  if (typeof wallpaperSceneSession !== 'undefined' && wallpaperSceneSession) {
+    syncWallpaperSceneRendering(false);
+    return { ok: true, backend: 'embedded-scene' };
+  }
   var stream = wallpaperEngineCaptureStream;
   var track = stream && stream.getVideoTracks ? stream.getVideoTracks()[0] : null;
   if (!track || typeof track.applyConstraints !== 'function') return { ok: false, skipped: true };
@@ -1262,6 +1267,7 @@ async function ensureWallpaperEngineGlassSamplerCapture(sessionId, layerToken, a
     }
     wallpaperEngineGlassCaptureRetryAttempt = 0;
     document.body.classList.add('wallpaper-engine-glass-sampler-ready');
+    if (typeof markAppPerf === 'function') markAppPerf('wallpaper-glass-live');
     try {
       window.__mineradioWallpaperEngineGlassSamplerState = {
         ok: true,
@@ -1302,6 +1308,18 @@ async function ensureWallpaperEngineGlassSamplerCapture(sessionId, layerToken, a
 }
 
 async function startWallpaperEngineNativeBackground(item, token) {
+  if (wallpaperEngineLibrarySnapshot && wallpaperEngineLibrarySnapshot.runtime && wallpaperEngineLibrarySnapshot.runtime.embeddedScenes && typeof startWallpaperScene === 'function') {
+    try { await startWallpaperScene(item, token); return; }
+    catch (error) {
+      if (token !== wallpaperEngineLayerToken || !wallpaperEngineSelection.active) throw error;
+      stopWallpaperScene();
+      console.warn('[Embedded Scene fallback]', error.message);
+    }
+  }
+  return startWallpaperEngineExternalBackground(item, token);
+}
+
+async function startWallpaperEngineExternalBackground(item, token) {
   var api = wallpaperEngineDesktopApi();
   if (!api || typeof api.startWallpaperEngineScene !== 'function') throw new Error('WALLPAPER_ENGINE_RUNTIME_UNAVAILABLE');
   if (!wallpaperEngineNativeStartIsCurrent(item, token)) throw new Error('WALLPAPER_ENGINE_START_SUPERSEDED');
@@ -1471,6 +1489,7 @@ function handleWallpaperEngineVideoPlayFailure(error, video, item, kind, token, 
 }
 
 function clearWallpaperEngineLayerMedia(delay) {
+  if (typeof stopWallpaperScene === 'function') stopWallpaperScene();
   cancelWallpaperEngineVideoRetry();
   cancelWallpaperEngineFirstFrameWait();
   var token = wallpaperEngineLayerToken;
@@ -1530,11 +1549,13 @@ function wallpaperEngineLayerReady(kind, token) {
   document.body.classList.toggle('wallpaper-engine-dwm-active', kind === 'dwm');
   if (kind !== 'dwm') {
     stopWallpaperEngineGlassCaptureStream(false);
-    layer.classList.add(kind === 'video' ? 'video-ready' : 'image-ready', 'ready');
+    if (kind !== 'scene') layer.classList.add(kind === 'video' ? 'video-ready' : 'image-ready');
+    layer.classList.add('ready');
     if (kind === 'video' && wallpaperEngineSelection.kind === 'engine') layer.classList.add('engine-ready');
     if (kind === 'video' && wallpaperEngineSelection.kind === 'engine') queueWallpaperEnginePointerActivity();
   }
   document.body.classList.add('wallpaper-engine-active');
+  if (typeof markAppPerf === 'function') markAppPerf('wallpaper-layer-ready');
   applyWallpaperEngineVisualSettings(true);
   if (kind === 'dwm' && typeof animateWallpaperEngineControlGlassSurface === 'function') {
     animateWallpaperEngineControlGlassSurface(560);
@@ -1624,7 +1645,8 @@ function applyWallpaperEngineBackground(item, quiet) {
 
   function beginWallpaperEngineMediaLoad() {
     if (token !== wallpaperEngineLayerToken || !wallpaperEngineSelection.active || wallpaperEngineSelection.id !== item.id) return;
-    if (kind === 'engine' && wallpaperEngineNativeHostUnavailable()) return;
+    if (kind === 'engine' && wallpaperEngineNativeHostUnavailable()
+      && !(wallpaperEngineLibrarySnapshot && wallpaperEngineLibrarySnapshot.runtime && wallpaperEngineLibrarySnapshot.runtime.embeddedScenes)) return;
     clearWallpaperEngineLayerMedia(0);
     if (kind === 'engine') {
       startWallpaperEngineNativeBackground(item, token).catch(function (error) {
@@ -1660,10 +1682,9 @@ function applyWallpaperEngineBackground(item, quiet) {
       beginWallpaperEngineMediaLoad();
     }, WALLPAPER_ENGINE_SWITCH_FADE_MS + 20);
   } else {
-    clearWallpaperEngineLayerMedia(0);
     beginWallpaperEngineMediaLoad();
   }
-  if (!quiet) showToast(kind === 'engine' ? '正在用 Wallpaper Engine 原生引擎载入 Scene…' : (kind === 'media' ? 'Wallpaper Engine 壁纸已启用' : '已启用安全预览，原背景仍保留'));
+  if (!quiet) showToast(kind === 'engine' ? '正在载入 Scene 壁纸…' : (kind === 'media' ? 'Wallpaper Engine 壁纸已启用' : '已启用安全预览，原背景仍保留'));
   return true;
 }
 
@@ -1753,6 +1774,7 @@ function restartWallpaperEngineAfterHostBoundsChange() {
 }
 
 function handleWallpaperEngineHostBoundsChange(payload) {
+  if (typeof wallpaperSceneSession !== 'undefined' && wallpaperSceneSession) { syncWallpaperSceneRendering(true); return; }
   var phase = String(payload && payload.phase || 'restart');
   if (phase === 'resident') {
     var residentSessionId = String(payload && payload.sessionId || '');
@@ -2134,29 +2156,33 @@ async function loadWallpaperEngineLibrary(force, showNotice) {
     if (showNotice) showToast('当前环境不支持 Wallpaper Engine 本地识别');
     return [];
   }
-  if (wallpaperEngineLibraryBusy) return wallpaperEngineProjects;
+  if (wallpaperEngineLibraryPromise) return wallpaperEngineLibraryPromise;
   wallpaperEngineLibraryBusy = true;
   var failure = '';
   updateWallpaperEngineLibraryStatus(null, '');
   renderWallpaperEngineLibrary();
-  try {
-    var snapshot = await api.listWallpaperEngineProjects({ force: force === true });
-    if (!snapshot || snapshot.ok === false) throw new Error(snapshot && snapshot.error || '扫描失败');
-    consumeWallpaperEngineSnapshot(snapshot);
-    if (showNotice) showToast(snapshot.count ? ('已识别 ' + snapshot.count + ' 个 Wallpaper Engine 项目') : '没有识别到 Wallpaper Engine 项目');
-    return wallpaperEngineProjects;
-  } catch (e) {
-    failure = e.message || '扫描失败';
-    wallpaperEngineProjects = [];
-    wallpaperEngineLibrarySnapshot = null;
-    wallpaperEngineMediaToken = '';
-    if (showNotice) showToast('Wallpaper Engine 识别失败');
-    return [];
-  } finally {
-    wallpaperEngineLibraryBusy = false;
-    updateWallpaperEngineLibraryStatus(wallpaperEngineLibrarySnapshot, failure);
-    renderWallpaperEngineLibrary();
-  }
+  wallpaperEngineLibraryPromise = Promise.resolve().then(async function () {
+    try {
+      var snapshot = await api.listWallpaperEngineProjects({ force: force === true });
+      if (!snapshot || snapshot.ok === false) throw new Error(snapshot && snapshot.error || '扫描失败');
+      consumeWallpaperEngineSnapshot(snapshot);
+      if (showNotice) showToast(snapshot.count ? ('已识别 ' + snapshot.count + ' 个 Wallpaper Engine 项目') : '没有识别到 Wallpaper Engine 项目');
+      return wallpaperEngineProjects;
+    } catch (e) {
+      failure = e.message || '扫描失败';
+      wallpaperEngineProjects = [];
+      wallpaperEngineLibrarySnapshot = null;
+      wallpaperEngineMediaToken = '';
+      if (showNotice) showToast('Wallpaper Engine 识别失败');
+      return [];
+    } finally {
+      wallpaperEngineLibraryBusy = false;
+      wallpaperEngineLibraryPromise = null;
+      updateWallpaperEngineLibraryStatus(wallpaperEngineLibrarySnapshot, failure);
+      renderWallpaperEngineLibrary();
+    }
+  });
+  return wallpaperEngineLibraryPromise;
 }
 
 async function openWallpaperEngineLibrary() {
@@ -2410,6 +2436,7 @@ function initializeWallpaperEngineLibrary() {
   applyWallpaperEngineVisualSettings(false);
   updateWallpaperEngineEntryUi();
   if (!wallpaperEngineSelection.active) return;
+  if (typeof markAppPerf === 'function') markAppPerf('wallpaper-restore-start');
   setTimeout(function () {
     loadWallpaperEngineLibrary(false, false).then(function () {
       var item = wallpaperEngineProjectById(wallpaperEngineSelection.id);

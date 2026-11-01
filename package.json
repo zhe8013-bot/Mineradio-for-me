@@ -1,7 +1,7 @@
 {
   "name": "mineradio",
   "productName": "Mineradio",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "基于 XxHuberrr 原作的 Mineradio 个人二创维护版，保留沉浸式音乐播放、歌词舞台与桌面视觉体验。",
   "author": "XxHuberrr",
   "license": "GPL-3.0-only",
@@ -83,6 +83,7 @@
     ]
   },
   "mineradio": {
+    "embeddedScene": true,
     "update": {
       "provider": "github",
       "owner": "zhe8013-bot",
