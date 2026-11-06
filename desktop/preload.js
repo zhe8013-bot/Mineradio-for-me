@@ -85,6 +85,15 @@ contextBridge.exposeInMainWorld('desktopWindow', {
   clearKugouMusicLogin: () => ipcRenderer.invoke('kugou-music-clear-login'),
   clearQishuiMusicLogin: () => ipcRenderer.invoke('qishui-music-clear-login'),
   openUpdatePage: (url) => ipcRenderer.invoke('mineradio-open-update-page', String(url || '')),
+  getUpdateState: () => ipcRenderer.invoke('mineradio-update-state'),
+  downloadUpdate: () => ipcRenderer.invoke('mineradio-update-download'),
+  installUpdate: () => ipcRenderer.invoke('mineradio-update-install'),
+  onUpdateState: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, state) => callback(state || {});
+    ipcRenderer.on('mineradio-update-state', listener);
+    return () => ipcRenderer.removeListener('mineradio-update-state', listener);
+  },
   restartApp: () => ipcRenderer.invoke('mineradio-restart-app'),
   configureGlobalHotkeys: (bindings) => ipcRenderer.invoke('mineradio-hotkeys-configure-global', bindings || []),
   copyText: (text) => {

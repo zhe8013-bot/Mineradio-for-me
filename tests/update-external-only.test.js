@@ -25,8 +25,9 @@ function serverFunctionSource(name, nextName) {
   return serverText.slice(start, end);
 }
 
-test('release update metadata accepts only a bounded HTTPS external page', () => {
-  assert.equal(packageData.version, '2.2.2');
+test('release metadata retains bounded HTTPS manual download pages', () => {
+  assert.equal(packageData.version, '2.2.3');
+  assert.equal(packageData.dependencies['electron-updater'], '6.8.9');
   assert.equal(packageData.mineradio.update.owner, 'zhe8013-bot');
   assert.equal(packageData.mineradio.update.repo, 'Mineradio-for-me');
   assert.equal(packageData.mineradio.update.preview, false);
@@ -40,7 +41,7 @@ test('release update metadata accepts only a bounded HTTPS external page', () =>
   assert.match(serverText, /\n\s+downloadPageUrl,/);
   assert.match(serverText, /\n\s+downloadPages,/);
   assert.match(serverText, /patchAvailable:\s*false/);
-  assert.match(htmlText, /id="update-modal-version"[^>]*>v2\.2\.1</);
+  assert.match(htmlText, /id="update-modal-version"[^>]*>v2\.2\.3</);
   assert.match(htmlText, /id="update-download-sources"/);
 });
 
@@ -78,7 +79,7 @@ test('release body preserves all three labelled HTTPS download pages', () => {
   ]);
 });
 
-test('renderer opens the external page without local installer or patch calls', () => {
+test('renderer delegates desktop updates to IPC and retains the manual HTTPS fallback', () => {
   assert.match(updateUiText, /desktopWindow\.openUpdatePage\(target\)/);
   assert.match(updateUiText, /new URL\(raw\)\.protocol === 'https:'/);
   assert.match(updateUiText, /function openUpdateDownloadSource\(index\)/);
@@ -87,6 +88,8 @@ test('renderer opens the external page without local installer or patch calls', 
   assert.match(updateUiText, /explicitPages === null/);
   assert.match(updateUiText, /update-download-source/);
   assert.match(updateUiText, /软件不会在本地下载或应用补丁/);
+  assert.match(updateUiText, /window\.desktopWindow\.downloadUpdate\(\)/);
+  assert.match(updateUiText, /window\.desktopWindow\.installUpdate\(\)/);
   assert.doesNotMatch(updateUiText, /\/api\/update\/download/);
   assert.doesNotMatch(updateUiText, /\/api\/update\/patch/);
   assert.doesNotMatch(updateUiText, /openUpdateInstaller/);

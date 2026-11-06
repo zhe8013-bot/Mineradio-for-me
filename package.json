@@ -1,8 +1,8 @@
 {
   "name": "mineradio",
   "productName": "Mineradio",
-  "version": "2.2.2",
-  "description": "基于 XxHuberrr 原作的 Mineradio 个人二创维护版，保留沉浸式音乐播放、歌词舞台与桌面视觉体验。",
+  "version": "2.2.3",
+  "description": "基于 XxHuberrr 原作的 Mineradio 个人二创维护版，支持应用内下载更新、歌词舞台与桌面视觉体验。",
   "author": "XxHuberrr",
   "license": "GPL-3.0-only",
   "main": "desktop/main.js",
@@ -98,6 +98,7 @@
     }
   },
   "dependencies": {
+    "electron-updater": "6.8.9",
     "gsap": "^3.15.0",
     "mpg123-decoder": "^1.0.3",
     "music-metadata": "11.14.0",

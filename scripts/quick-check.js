@@ -1558,15 +1558,18 @@ function checkPersistentCacheStorageGuard() {
 }
 
 function checkExternalUpdatePageBridgeGuard() {
-  logStep('External update page bridge guard');
+  logStep('In-app update and manual download bridge guard');
   const regression = spawnSync(process.execPath, ['--test',
     path.join(appRoot, 'tests', 'update-external-only.test.js'),
-    path.join(appRoot, 'tests', 'update-download-link-rotation.test.js')
+    path.join(appRoot, 'tests', 'update-download-link-rotation.test.js'),
+    path.join(appRoot, 'tests', 'app-updater.test.js'),
+    path.join(appRoot, 'tests', 'in-app-update-ui.test.js'),
+    path.join(appRoot, 'tests', 'app-updater-download.test.js')
   ], { cwd: appRoot, encoding: 'utf8' });
   if (regression.status !== 0) {
     process.stdout.write(regression.stdout || '');
     process.stderr.write(regression.stderr || '');
-    fail('external update link rotation regression failed');
+    fail('in-app update or manual download regression failed');
   }
   process.stdout.write(regression.stdout || '');
   const mainText = fs.readFileSync(path.join(appRoot, 'desktop', 'main.js'), 'utf8');
@@ -1595,9 +1598,11 @@ function checkExternalUpdatePageBridgeGuard() {
     || !/openUpdateDownloadSource/.test(updateUiText)
     || !/update-download-source/.test(updateUiText)
     || !/desktopWindow\.openUpdatePage\(target\)/.test(updateUiText)
-    || !/软件不会在本地下载或应用补丁/.test(updateUiText)
+    || !/desktopWindow\.downloadUpdate\(\)/.test(updateUiText)
+    || !/desktopWindow\.installUpdate\(\)/.test(updateUiText)
+    || !/mineradio-update-download/.test(preloadText)
   ) {
-    fail('updates must resolve to an external download page and keep legacy local routes disabled');
+    fail('desktop updates must use trusted IPC while preserving manual download and disabled legacy HTTP routes');
   }
   if (
     /startUpdateDownloadJob|startUpdatePatchJob|updateDownloadJobs|UPDATE_DOWNLOAD_DIR|pickPatchAsset/.test(serverText)
@@ -1605,7 +1610,7 @@ function checkExternalUpdatePageBridgeGuard() {
   ) {
     fail('local installer download and quick-patch workers must remain removed');
   }
-  console.log('[OK] Updates use a trusted HTTPS-only external-page bridge with no local installer path.');
+  console.log('[OK] Desktop updates use trusted IPC; renderer cannot pass installer paths; legacy HTTP patch routes stay disabled.');
 }
 
 function checkLyricTranslationCompletenessGuard() {

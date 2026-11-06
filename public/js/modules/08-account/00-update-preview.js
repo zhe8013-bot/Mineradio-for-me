@@ -1,6 +1,5 @@
 // ============================================================
-// Update preview: external download page only.
-// Mineradio no longer downloads installers or applies resource patches.
+// Desktop updates use a verified NSIS installer; browser downloads stay available.
 // ============================================================
 function isSafeUpdatePageUrl(value) {
   var raw = String(value || '').trim();
@@ -56,6 +55,27 @@ function initUpdatePreview() {
   renderUpdatePreviewPanel();
   setUpdatePreviewVisible(false);
   checkLatestUpdate();
+  initDesktopUpdater();
+}
+
+async function initDesktopUpdater() {
+  var desktop = window.desktopWindow;
+  if (!desktop || typeof desktop.getUpdateState !== 'function') return;
+  desktop.onUpdateState(applyDesktopUpdateState);
+  try { applyDesktopUpdateState(await desktop.getUpdateState()); }
+  catch (e) { updatePreviewState.desktopUpdate = null; }
+}
+
+function applyDesktopUpdateState(state) {
+  updatePreviewState.desktopUpdate = state;
+  if (state.supported && state.status !== 'idle' && !updatePreviewState.visible) setUpdatePreviewVisible(true);
+  if (state.supported && state.version && ['downloading', 'ready', 'installing'].includes(state.status)) {
+    updatePreviewState.version = state.version;
+    var version = document.getElementById('update-modal-version');
+    if (version) version.textContent = 'v' + state.version;
+  }
+  syncUpdatePreviewStateClass();
+  updateUpdatePreviewProgress(state.percent);
 }
 
 function setUpdatePreviewVisible(visible) {
@@ -87,7 +107,8 @@ async function checkLatestUpdate() {
     updatePreviewState.hero = '暂时无法检查更新。';
     updatePreviewState.message = (e && e.message) || 'UPDATE_CHECK_FAILED';
     renderUpdatePreviewPanel();
-    setUpdatePreviewVisible(false);
+    var desktop = updatePreviewState.desktopUpdate;
+    setUpdatePreviewVisible(!!(desktop && desktop.supported && desktop.status !== 'idle'));
   }
 }
 
@@ -128,8 +149,11 @@ function applyLatestUpdateInfo(data) {
   updatePreviewState.hero = release.summary
     || (updatePreviewState.updateAvailable ? '发现新版本，建议更新。' : '当前版本已是最新。');
   updatePreviewState.notes = Array.isArray(release.notes) ? release.notes.slice(0, 4) : [];
+  var desktop = updatePreviewState.desktopUpdate;
+  var activeDesktopUpdate = desktop && desktop.supported && desktop.status !== 'idle';
+  if (activeDesktopUpdate && desktop.version) updatePreviewState.version = desktop.version;
   renderUpdatePreviewPanel();
-  setUpdatePreviewVisible(updatePreviewState.updateAvailable || updatePreviewState.preview);
+  setUpdatePreviewVisible(updatePreviewState.updateAvailable || updatePreviewState.preview || !!activeDesktopUpdate);
 }
 
 function startUpdateIconBreathing() {
@@ -178,7 +202,7 @@ function renderUpdatePreviewPanel() {
     }).join('');
   }
   renderUpdateDownloadSources();
-  updateUpdatePreviewProgress(0);
+  updateUpdatePreviewProgress();
   syncUpdatePreviewStateClass();
 }
 
@@ -187,7 +211,8 @@ function renderUpdateDownloadSources() {
   if (!container) return;
   var pages = currentUpdateDownloadPages();
   container.innerHTML = '';
-  container.hidden = !updatePreviewState.updateAvailable || pages.length < 2;
+  container.hidden = !!(updatePreviewState.desktopUpdate && updatePreviewState.desktopUpdate.supported)
+    || !updatePreviewState.updateAvailable || pages.length < 2;
   if (container.hidden) return;
   pages.forEach(function (page, index) {
     var button = document.createElement('button');
@@ -212,6 +237,34 @@ function syncUpdatePreviewStateClass() {
   var downloadPages = currentUpdateDownloadPages();
   var selectedPage = downloadPages[Number(updatePreviewState.selectedDownloadPageIndex || 0)] || downloadPages[0] || null;
   var updateUrl = currentUpdatePageUrl();
+  var desktop = updatePreviewState.desktopUpdate;
+  if (desktop && desktop.supported) {
+    var busy = ['checking', 'downloading', 'installing'].includes(desktop.status);
+    if (entry) {
+      entry.classList.toggle('downloading', busy);
+      entry.classList.toggle('ready', desktop.status === 'ready');
+    }
+    if (modal) {
+      modal.classList.toggle('ready', desktop.status === 'ready');
+      modal.classList.toggle('error', desktop.status === 'error');
+    }
+    var desktopLabel = document.getElementById('update-btn-label');
+    if (desktopLabel) desktopLabel.textContent = desktop.status === 'ready' ? '重启并安装'
+      : desktop.status === 'checking' ? '正在准备更新'
+      : desktop.status === 'downloading' ? '下载中 ' + Math.floor(desktop.percent || 0) + '%'
+      : desktop.status === 'installing' ? '正在退出并安装'
+      : desktop.status === 'error' ? '重试下载' : '下载更新';
+    var desktopButton = document.getElementById('update-primary-btn');
+    if (desktopButton) desktopButton.disabled = busy || (!updatePreviewState.updateAvailable && desktop.status !== 'ready');
+    var desktopFoot = document.getElementById('update-footnote');
+    if (desktopFoot) desktopFoot.textContent = desktop.status === 'error' ? '更新失败：' + desktop.error + '。可重试或手动下载。'
+      : desktop.status === 'ready' ? '安装包已校验。点击后将退出播放器、安装更新并重新启动。'
+      : desktop.status === 'installing' ? '正在保存状态并退出播放器，请稍候。'
+      : '在应用内下载更新；下载完成并校验后，可点击重启安装。';
+    var manualButton = document.getElementById('update-manual-btn');
+    if (manualButton) manualButton.hidden = !updateUrl;
+    return;
+  }
   if (entry) {
     entry.classList.toggle('downloading', isOpening);
     entry.classList.toggle('ready', isOpened);
@@ -250,12 +303,14 @@ function syncUpdatePreviewStateClass() {
   }
 }
 
-function updateUpdatePreviewProgress() {
-  updatePreviewState.progress = 0;
+function updateUpdatePreviewProgress(percent) {
+  var desktop = updatePreviewState.desktopUpdate;
+  var progress = desktop && desktop.supported ? Math.max(0, Math.min(100, Number(percent == null ? desktop.percent : percent) || 0)) : 0;
+  updatePreviewState.progress = progress;
   var fill = document.getElementById('update-btn-fill');
-  if (fill) fill.style.width = '0%';
+  if (fill) fill.style.width = progress + '%';
   var ring = document.getElementById('update-progress-ring');
-  if (ring) ring.style.strokeDashoffset = '55.29';
+  if (ring) ring.style.strokeDashoffset = String(55.29 * (1 - progress / 100));
 }
 
 function openUpdatePanel() {
@@ -320,6 +375,22 @@ function openUpdateDownloadSource(index) {
 }
 
 async function startUpdatePreviewDownload(preferredIndex) {
+  var desktop = updatePreviewState.desktopUpdate;
+  if (!Number.isInteger(preferredIndex) && desktop && desktop.supported) {
+    if (['checking', 'downloading', 'installing'].includes(desktop.status)) return;
+    if (!updatePreviewState.updateAvailable && desktop.status !== 'ready') return;
+    var installing = desktop.status === 'ready';
+    applyDesktopUpdateState(Object.assign({}, desktop, { status: installing ? 'installing' : 'checking', error: '' }));
+    try {
+      if (installing && typeof saveLastPlaybackSnapshot === 'function') saveLastPlaybackSnapshot(true, 'update-install');
+      var result = installing ? await window.desktopWindow.installUpdate() : await window.desktopWindow.downloadUpdate();
+      if (!result || !result.ok) throw new Error(result && result.error || '更新失败，请重试');
+      if (!installing) applyDesktopUpdateState(result);
+    } catch (e) {
+      applyDesktopUpdateState(Object.assign({}, updatePreviewState.desktopUpdate, { status: 'error', error: e.message || '更新失败，请重试' }));
+    }
+    return;
+  }
   if (updatePreviewState.status === 'opening') return;
   if (!updatePreviewState.updateAvailable) {
     showToast('当前版本已是最新');
@@ -359,6 +430,18 @@ async function startUpdatePreviewDownload(preferredIndex) {
     updatePreviewState.errorReason = (e && e.message) || 'OPEN_UPDATE_PAGE_FAILED';
     syncUpdatePreviewStateClass();
     showToast('无法打开更新页面');
+  }
+}
+
+function openManualUpdatePage() {
+  var target = currentUpdatePageUrl();
+  if (!target) return;
+  if (window.desktopWindow && typeof window.desktopWindow.openUpdatePage === 'function') {
+    window.desktopWindow.openUpdatePage(target).then(function (result) {
+      if (!result || result.ok === false) showToast('无法打开下载页面');
+    }).catch(function () { showToast('无法打开下载页面'); });
+  } else {
+    window.open(target, '_blank', 'noopener');
   }
 }
 

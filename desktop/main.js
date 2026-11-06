@@ -6,6 +6,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { execFile, spawn } = require('child_process');
 const systemMemory = require('./system-memory');
+const { AppUpdater } = require('./app-updater');
 const {
   WallpaperEngineLibrary,
   discoverSteamLibraries,
@@ -69,6 +70,7 @@ let closeBehavior = 'exit';
 let appQuitting = false;
 let appQuitCleanupPromise = null;
 let appQuitCleanupComplete = false;
+let appUpdater = null;
 let mainWindowCloseFlushArmed = false;
 let tray = null;
 let startupCompleted = false;
@@ -4900,6 +4902,42 @@ ipcMain.handle('qishui-music-clear-login', async () => {
   return clearQishuiMusicLoginSession();
 });
 
+function getAppUpdater() {
+  if (!appUpdater) {
+    appUpdater = new AppUpdater({
+      updater: app.isPackaged && process.platform === 'win32' ? require('electron-updater').autoUpdater : null,
+      config: APP_METADATA.update,
+      onState: (state) => {
+        if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('mineradio-update-state', state);
+      },
+    });
+  }
+  return appUpdater;
+}
+
+ipcMain.handle('mineradio-update-state', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  return getAppUpdater().getState();
+});
+
+ipcMain.handle('mineradio-update-download', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  return getAppUpdater().download();
+});
+
+ipcMain.handle('mineradio-update-install', async (event) => {
+  if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
+  const result = getAppUpdater().prepareInstall();
+  if (!result.ok) return result;
+  await flushMainWindowFxAutosave('update-install');
+  setImmediate(() => {
+    appQuitting = true;
+    if (appQuitCleanupComplete) appUpdater.install();
+    else app.quit();
+  });
+  return { ok: true };
+});
+
 ipcMain.handle('mineradio-open-update-page', async (event, value) => {
   try {
     if (!isTrustedMainWindowIpc(event)) return { ok: false, error: 'UNTRUSTED_SENDER' };
@@ -6096,7 +6134,8 @@ if (!gotSingleInstanceLock) {
     appQuitCleanupPromise = Promise.race([runtimeCleanup, timeoutCleanup]).finally(() => {
       if (cleanupTimeout) clearTimeout(cleanupTimeout);
       appQuitCleanupComplete = true;
-      app.quit();
+      if (appUpdater && appUpdater.getState().status === 'installing') appUpdater.install();
+      else app.quit();
     });
   });
 }

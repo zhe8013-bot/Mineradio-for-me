@@ -4861,6 +4861,11 @@ body.desktop-shell.empty-home-active.controls-visible #empty-home {
   padding-top: 0
 }
 
+#update-manual-btn {
+  grid-column: 1 / -1;
+  height: 28px
+}
+
 .update-primary-btn {
   position: relative;
   height: 44px;

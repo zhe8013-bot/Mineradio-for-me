@@ -58,8 +58,8 @@ var updatePreviewState = {
   open: false,
   status: 'idle',
   progress: 0,
-  currentVersion: '2.2.1',
-  version: '2.2.1',
+  currentVersion: '2.2.3',
+  version: '2.2.3',
   configured: false,
   preview: false,
   updateAvailable: false,
@@ -72,7 +72,6 @@ var updatePreviewState = {
   message: '',
   hero: '当前版本已是最新。',
   notes: [
-    '请以本次发布公告中的最新网盘链接为准',
-    '改善音乐接口、歌单加载和连续播放体验'
+    '可在应用内下载更新，校验完成后重启安装'
   ]
 };
