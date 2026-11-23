@@ -37,7 +37,12 @@ Release 必须包含完整安装包、对应 `.blockmap`、构建生成的 `late
 
 ## 自动更新验证
 
-发布后使用本机已安装的 2.2.3 正式版执行一次真实检查、应用内下载、SHA-512 校验、重启安装和安装后版本确认；结果将回写到本节和 Release 正文。
+已使用本机安装的 2.2.3 正式版完成一次真实自动更新：
+
+- 应用内检测到 2.2.4，并从 GitHub Release 下载完整 `Mineradio-2.2.4-Setup.exe`，进度到达 `ready / 100%`。
+- `electron-updater` 按 `latest.yml` 完成 SHA-512 校验，点击“重启并安装”后完成 NSIS 覆盖安装并自动重启。
+- 安装后 `resources\app\package.json`、`Mineradio.exe` 文件版本和 `/api/app/version` 均返回 `2.2.4`。
+- 因此 `2.2.3 → 2.2.4` 的检查、下载、校验、安装和重启全链路已实测通过。
 
 ## 线上核验
 
