@@ -29,8 +29,12 @@ app.whenReady().then(async () => {
   const qr = await bridge.createQrCode();
   const token = String(qr && qr.data && qr.data.token || '');
   const image = String(qr && qr.data && qr.data.qrcode || '');
+  const douyinImage = String(qr && qr.data && qr.data.douyin_qrcode || '');
   const indexUrl = String(qr && qr.data && qr.data.qrcode_index_url || '');
-  if (!token || !image.startsWith('data:image/png;base64,') || !indexUrl) {
+  const scanUrl = String(qr && qr.data && qr.data.scan_url || '');
+  const douyinScanUrl = String(qr && qr.data && qr.data.douyin_scan_url || '');
+  if (!token || !image.startsWith('data:image/png;base64,') || !douyinImage.startsWith('data:image/png;base64,') ||
+    !indexUrl || !scanUrl || !douyinScanUrl) {
     throw new Error('QISHUI_LIVE_QR_INVALID');
   }
 
@@ -41,7 +45,10 @@ app.whenReady().then(async () => {
     signedPassportQr: true,
     tokenLength: token.length,
     qrDataUrlLength: image.length,
+    douyinQrDataUrlLength: douyinImage.length,
     qrcodeIndexOrigin: new URL(indexUrl).origin,
+    qrcodeScanPath: new URL(scanUrl).pathname,
+    douyinScanPath: new URL(douyinScanUrl).pathname,
     firstCheckErrorCode: Number(data.error_code || 0),
     firstCheckStatus: String(data.status || 'waiting'),
   }));

@@ -29,7 +29,7 @@ function loginProviderSupportsCookieMode(provider) {
 function loginProviderOfficialModeText(provider) {
   provider = normalizeLoginProviderKey(provider);
   if (provider === 'spotify') return { title: 'OAuth', sub: '弹出 Spotify 授权窗口' };
-  if (provider === 'qishui') return { title: '扫码', sub: '使用抖音 App 官方授权' };
+  if (provider === 'qishui') return { title: '扫码', sub: '使用汽水音乐 App 扫码' };
   if (provider === 'kugou') return { title: '官网', sub: '弹出酷狗官方窗口' };
   return { title: '扫码', sub: '连接后弹出官方窗口' };
 }
@@ -598,7 +598,12 @@ function closeLoginModal() {
   closeGsapModal(document.getElementById('login-modal'));
 }
 function setLoginProvider(provider, silent) {
+  var previousProvider = loginProvider;
   loginProvider = normalizeLoginProviderKey(provider);
+  if (loginProvider !== previousProvider) {
+    qishuiQrMode = 'qishui';
+    qishuiQrSources = { qishui: '', douyin: '' };
+  }
   loginRefreshRequestSeq += 1;
   updateLoginProviderUi();
   if (!silent && document.getElementById('login-modal').classList.contains('show')) refreshQr();
@@ -608,10 +613,41 @@ function qishuiPublicSearchReady() {
 }
 function qishuiLoginStatusText(info) {
   info = info || qishuiLoginStatus || {};
-  if (info.reauthRequired) return '汽水音乐登录已失效，请使用抖音 App 重新扫码';
+  if (info.reauthRequired) return '汽水音乐登录已失效，请使用汽水音乐 App 或抖音重新扫码';
   if (info.stale) return '汽水音乐连接暂时不可用，账号与会员状态待同步';
   if (info.webSession) return '汽水音乐已登录 · 可同步我的喜欢、歌单并按账号权益播放';
-  return '请使用抖音 App 扫描二维码并确认登录';
+  return '请使用汽水音乐 App 扫码并确认登录';
+}
+function qishuiQrTargetLabel() {
+  return qishuiQrMode === 'douyin' ? '抖音 App' : '汽水音乐 App';
+}
+function qishuiQrModeAvailable() {
+  return loginProvider === 'qishui' && !!qrKey && !!(qishuiQrSources.qishui && qishuiQrSources.douyin);
+}
+function applyQishuiQrMode() {
+  var img = document.getElementById('qr-img');
+  var statusEl = document.getElementById('qr-status');
+  var modeBtn = document.getElementById('qishui-qr-mode-btn');
+  var source = qishuiQrSources[qishuiQrMode] || qishuiQrSources.qishui || '';
+  if (img && source) {
+    img.src = source;
+    img.alt = qishuiQrMode === 'douyin' ? '抖音登录二维码' : '汽水音乐登录二维码';
+  }
+  if (statusEl) {
+    statusEl.textContent = '请使用' + qishuiQrTargetLabel() + ' 扫码并确认登录';
+    statusEl.className = '';
+  }
+  if (modeBtn) {
+    var available = qishuiQrModeAvailable();
+    modeBtn.classList.toggle('show', available);
+    modeBtn.disabled = !available;
+    modeBtn.textContent = qishuiQrMode === 'douyin' ? '改用汽水扫码' : '改用抖音扫码';
+  }
+}
+function toggleQishuiQrMode() {
+  if (!qishuiQrModeAvailable()) return;
+  qishuiQrMode = qishuiQrMode === 'douyin' ? 'qishui' : 'douyin';
+  applyQishuiQrMode();
 }
 function spotifyLoginStatusText(info) {
   info = info || spotifyLoginStatus || {};
@@ -900,6 +936,7 @@ function updateLoginProviderUi() {
   var refreshBtn = document.getElementById('refresh-qr-btn');
   var qqPanel = document.getElementById('qq-cookie-panel');
   var qqCookieToggle = document.getElementById('qq-cookie-toggle-btn');
+  var qishuiModeBtn = document.getElementById('qishui-qr-mode-btn');
   var qqCookieInput = document.getElementById('qq-cookie-input');
   var qqCookieNote = qqPanel ? qqPanel.querySelector('.qq-cookie-note') : null;
   var qqCard = document.getElementById('qq-web-login-card');
@@ -994,7 +1031,7 @@ function updateLoginProviderUi() {
     : (isKugou
       ? '打开 <b>酷狗音乐官方网页登录窗口</b> 登录，成功后会自动同步账号会话。'
     : (isQishui
-      ? '使用已登录账号的 <b>抖音 App</b> 扫描官方二维码并确认，登录后可同步我的喜欢、歌单并按账号权益播放。'
+      ? '使用已登录的 <b>汽水音乐 App</b> 扫码并确认；识别失败可切换 <b>抖音 App</b>。登录后可同步我的喜欢、歌单并按账号权益播放。'
     : (canOpenNeteaseWeb
       ? '打开 <b>网易云音乐官方网页登录窗口</b> 扫码，避开接口二维码风控；成功后会自动同步账号会话。'
       : '使用 <b>网易云音乐 App</b> 扫码，可同步歌单、红心与播客。')));
@@ -1009,6 +1046,12 @@ function updateLoginProviderUi() {
   if (qqCookieToggle) {
     qqCookieToggle.classList.toggle('show', isManualCookieProvider);
     qqCookieToggle.textContent = manualCookieOpen ? '收起导入' : 'Cookie 导入';
+  }
+  if (qishuiModeBtn) {
+    var qishuiModeAvailable = isQishui && qishuiQrModeAvailable();
+    qishuiModeBtn.classList.toggle('show', qishuiModeAvailable);
+    qishuiModeBtn.disabled = !qishuiModeAvailable;
+    qishuiModeBtn.textContent = qishuiQrMode === 'douyin' ? '改用汽水扫码' : '改用抖音扫码';
   }
   if (qqCookieInput) qqCookieInput.placeholder = isKugou ? 'KuGoo=...; token=...; userid=...; kg_mid=...' : (isNetease ? 'MUSIC_U=...; __csrf=...' : 'uin=...; qqmusic_key=...; qm_keyst=...');
   if (qqCookieNote) qqCookieNote.textContent = isKugou ? '从 kugou.com 的登录会话导入。' : (isNetease ? '从 music.163.com 的登录会话导入。' : '从 y.qq.com 的登录会话导入。');
@@ -1066,6 +1109,7 @@ async function refreshQr() {
   }
   if (loginProvider === 'qishui') {
     qrKey = null;
+    qishuiQrSources = { qishui: '', douyin: '' };
     var qishuiStatus = document.getElementById('qr-status');
     var qishuiImg = document.getElementById('qr-img');
     if (qishuiImg) qishuiImg.src = '';
@@ -1078,14 +1122,10 @@ async function refreshQr() {
         throw new Error((qishuiQr && (qishuiQr.message || qishuiQr.error)) || '生成汽水音乐二维码失败');
       }
       qrKey = qishuiQr.token;
-      if (qishuiImg) {
-        qishuiImg.src = qishuiQr.qrcode;
-        qishuiImg.alt = '汽水音乐登录二维码';
-      }
-      if (qishuiStatus) {
-        qishuiStatus.textContent = '请使用抖音 App 扫码并确认登录';
-        qishuiStatus.className = '';
-      }
+      qishuiQrSources.qishui = qishuiQr.qrcode;
+      qishuiQrSources.douyin = qishuiQr.douyinQrcode || '';
+      if (!qishuiQrSources[qishuiQrMode]) qishuiQrMode = 'qishui';
+      applyQishuiQrMode();
       startQrPoll();
     } catch (e) {
       if (!isLoginRefreshCurrent(refreshProvider, refreshSeq)) return;
@@ -1095,10 +1135,9 @@ async function refreshQr() {
       }
     } finally {
       qishuiOAuthBusy = false;
-      if (isLoginRefreshCurrent(refreshProvider, refreshSeq)) updateLoginProviderUi();
-      if (qishuiStatus && qrKey && isLoginRefreshCurrent(refreshProvider, refreshSeq)) {
-        qishuiStatus.textContent = '请使用抖音 App 扫码并确认登录';
-        qishuiStatus.className = '';
+      if (isLoginRefreshCurrent(refreshProvider, refreshSeq)) {
+        updateLoginProviderUi();
+        if (qrKey) applyQishuiQrMode();
       }
     }
     return;
@@ -1241,7 +1280,7 @@ async function pollQishuiQr(generation) {
     } else if (statusEl) {
       statusEl.textContent = qrStatus === 'scanned' || qrStatus === '2'
         ? '已扫码，请在手机确认…'
-        : '等待扫码确认…';
+        : ('等待' + qishuiQrTargetLabel() + ' 扫码确认…');
       statusEl.className = qrStatus === 'scanned' || qrStatus === '2' ? 'scan' : '';
     }
   } catch (e) {

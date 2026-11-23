@@ -34,7 +34,7 @@ function updateUserModalUi() {
       vipEl.style.color = hasProviderVip('kugou', st) ? 'rgba(86,224,255,0.86)' : 'rgba(86,224,255,0.58)';
     } else if (activeAccountProvider === 'qishui') {
       var qishuiMode = st && st.webSession ? '汽水音乐已扫码登录' : '汽水音乐未登录';
-      var qishuiSync = st && st.webSession ? '可同步我的喜欢、歌单并按账号权益播放' : '请使用抖音 App 扫码';
+      var qishuiSync = st && st.webSession ? '可同步我的喜欢、歌单并按账号权益播放' : '请使用汽水音乐 App 扫码';
       vipEl.textContent = qishuiMode + '  /  ' + qishuiSync;
       vipEl.style.color = 'rgba(69,214,143,0.78)';
     } else if (activeAccountProvider === 'spotify') {

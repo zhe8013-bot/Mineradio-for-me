@@ -25,7 +25,8 @@ test('Qishui Passport QR bridge persists a confirmed official web session and cl
         message: 'success',
         data: {
           token: 'official-passport-token',
-          qrcode: 'data:image/png;base64,TEST',
+          qrcode: 'data:image/png;base64,OFFICIAL',
+          douyin_qrcode: 'data:image/png;base64,DOUYIN',
           qrcode_index_url: 'https://api.qishui.com/passport/web/get_qrcode/?token=official-passport-token',
         },
       };
@@ -49,6 +50,8 @@ test('Qishui Passport QR bridge persists a confirmed official web session and cl
   const bridge = createQishuiQrLoginBridge({ auth, configFile });
   const qr = await bridge.createQrCode();
   assert.equal(qr.data.token, 'official-passport-token');
+  assert.equal(qr.data.qrcode, 'data:image/png;base64,OFFICIAL');
+  assert.equal(qr.data.douyin_qrcode, 'data:image/png;base64,DOUYIN');
 
   const confirmed = await bridge.checkQrConnect(qr.data.token);
   assert.equal(confirmed.data.confirmed, true);
@@ -112,10 +115,15 @@ test('Qishui login product surface uses only the signed Passport QR flow', () =>
   assert.match(server, /require\('\.\/qishui-qr-login'\)/);
   assert.match(server, /\/api\/qishui\/login\/qrcode/);
   assert.match(server, /\/api\/qishui\/login\/check/);
+  assert.match(server, /douyinQrcode/);
+  assert.match(server, /请使用汽水音乐 App 扫码并确认登录/);
   assert.doesNotMatch(server, /pn === '\/api\/qishui\/login\/token'/);
   assert.doesNotMatch(server, /pn === '\/api\/qishui\/login\/cookie'/);
 
-  assert.match(ui, /请使用抖音 App 扫码并确认登录/);
+  assert.match(ui, /请使用汽水音乐 App 扫码并确认登录/);
+  assert.match(ui, /改用抖音扫码/);
+  assert.match(ui, /douyinQrcode/);
+  assert.match(ui, /applyQishuiQrMode/);
   assert.match(ui, /pollQishuiQr/);
   assert.match(ui, /\/api\/qishui\/login\/qrcode/);
   assert.match(ui, /\/api\/qishui\/login\/check/);
@@ -131,6 +139,8 @@ test('Qishui login product surface uses only the signed Passport QR flow', () =>
   assert.match(auth, /a_bogus/);
   assert.match(auth, /\/passport\/web\/get_qrcode\//);
   assert.match(auth, /\/passport\/web\/check_qrconnect\//);
+  assert.match(auth, /data\.qrcode/);
+  assert.match(auth, /douyin_qrcode/);
   assert.match(auth, /secondVerify/);
   assert.match(
     auth,

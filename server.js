@@ -5271,9 +5271,12 @@ const server = http.createServer(async (req, res) => {
         provider: 'qishui',
         token: String(data.token || ''),
         qrcode: String(data.qrcode || ''),
+        douyinQrcode: String(data.douyin_qrcode || ''),
         qrcodeIndexUrl: String(data.qrcode_index_url || ''),
+        scanUrl: String(data.scan_url || ''),
+        douyinScanUrl: String(data.douyin_scan_url || ''),
         expireTime: Number(data.expire_time || 0),
-        message: '请使用抖音 App 扫码并确认登录',
+        message: '请使用汽水音乐 App 扫码并确认登录；识别失败可改用抖音扫码',
       });
     } catch (err) {
       console.error('[QishuiQRCode]', err);
@@ -5281,6 +5284,7 @@ const server = http.createServer(async (req, res) => {
         provider: 'qishui',
         token: '',
         qrcode: '',
+        douyinQrcode: '',
         error: err && err.code || 'QISHUI_QR_CREATE_FAILED',
         message: err && err.message || '汽水音乐二维码生成失败',
       }, 500);

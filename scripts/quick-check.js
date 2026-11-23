@@ -1689,7 +1689,7 @@ function checkQishuiProviderGuard() {
   if (/vsaa\.cn|QISHUI_VIP_PROXY|music\.qishui\.vip/.test(qishuiText)) {
     fail('Qishui playback must not depend on third-party VIP/proxy endpoints');
   }
-  if (!/search: tokenConfigured \|\| webSession \|\| QISHUI_PUBLIC_ENABLED/.test(qishuiText) || !/loggedIn: webSession/.test(qishuiText) || !/请使用抖音 App 扫描 Mineradio 中的汽水官方二维码/.test(qishuiText)) {
+  if (!/search: tokenConfigured \|\| webSession \|\| QISHUI_PUBLIC_ENABLED/.test(qishuiText) || !/loggedIn: webSession/.test(qishuiText) || !/请使用汽水音乐 App 扫描 Mineradio 中的汽水官方二维码/.test(qishuiText)) {
     fail('Qishui status must keep public catalogue readiness separate from an authenticated Passport Web session');
   }
   const oldQishuiCredentialPrompt = new RegExp('当前版本还没有内置' + '抖音开放平台应用凭证');
@@ -1702,10 +1702,10 @@ function checkQishuiProviderGuard() {
   if (!/require\('\.\/qishui-qr-login'\)/.test(serverText) || !/\/api\/qishui\/login\/qrcode/.test(serverText) || !/\/api\/qishui\/login\/check/.test(serverText) || /pn === '\/api\/qishui\/login\/(?:token|cookie)'/.test(serverText)) {
     fail('Qishui login server must expose only the signed Passport QR create/check boundary');
   }
-  if (!/persist:mineradio-qishui-auth-v6/.test(qishuiPassportText) || !/a_bogus/.test(qishuiPassportText) || !/check_qrconnect/.test(qishuiPassportText) || !/secondVerify/.test(qishuiPassportText) || !/createQishuiQrLoginBridge/.test(qishuiQrBridgeText)) {
+  if (!/persist:mineradio-qishui-auth-v6/.test(qishuiPassportText) || !/a_bogus/.test(qishuiPassportText) || !/check_qrconnect/.test(qishuiPassportText) || !/douyin_qrcode/.test(qishuiPassportText) || !/secondVerify/.test(qishuiPassportText) || !/createQishuiQrLoginBridge/.test(qishuiQrBridgeText)) {
     fail('Qishui Passport QR must retain the isolated signing runtime, a_bogus validation, polling, persistence, and MFA bridge');
   }
-  if (!/pollQishuiQr/.test(qishuiLoginText) || !/请使用抖音 App 扫码并确认登录/.test(qishuiLoginText) || /读取本机汽水|本机会话|Token 导入|submitQishuiTokenLogin|openQishuiMusicLogin/.test(qishuiLoginText)) {
+  if (!/pollQishuiQr/.test(qishuiLoginText) || !/请使用汽水音乐 App 扫码并确认登录/.test(qishuiLoginText) || !/douyinQrcode/.test(qishuiLoginText) || !/applyQishuiQrMode/.test(qishuiLoginText) || /读取本机汽水|本机会话|Token 导入|submitQishuiTokenLogin|openQishuiMusicLogin/.test(qishuiLoginText)) {
     fail('Qishui login UI must use only the official in-panel QR flow');
   }
   if (/ipcMain\.handle\('qishui-music-open-login'/.test(desktopMainText) || /openQishuiMusicLogin/.test(desktopPreloadText) || !/await qishuiQrLogin\.clear\(\)/.test(desktopMainText)) {
@@ -1714,7 +1714,7 @@ function checkQishuiProviderGuard() {
   if (!/汽水音乐已扫码登录/.test(accountLogoutText) || !/按账号权益播放/.test(accountLogoutText) || /本机汽水会话|OpenAPI token/.test(accountLogoutText)) {
     fail('Qishui account status must describe the official QR session without exposing legacy import modes');
   }
-  if (!/官方扫码 \/ 抖音确认/.test(indexText) || /本地会话 \/ PC 客户端/.test(indexText)) {
+  if (!/官方扫码 \/ 汽水·抖音/.test(indexText) || /本地会话 \/ PC 客户端/.test(indexText)) {
     fail('Qishui login node must identify the official QR flow');
   }
   if (!/\/luna\/pc\/me/.test(qishuiText) || !/\/luna\/pc\/user\/playlist/.test(qishuiText) || !/\/luna\/pc\/playlist\/detail/.test(qishuiText) || !/function qishuiPcAppParams/.test(qishuiText) || !/pcApp: true/.test(qishuiText) || !/count: Math\.min\(100/.test(qishuiText) || /\/luna\/pc\/playlist\/detail[\s\S]{0,260}cnt:/.test(qishuiText)) {

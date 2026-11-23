@@ -9776,6 +9776,17 @@ body.login-guide-active #login-guide-canvas {
   justify-content: center
 }
 
+#qishui-qr-mode-btn {
+  display: none;
+  padding: 8px 13px
+}
+
+#qishui-qr-mode-btn.show {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center
+}
+
 #qr-status {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.7);

@@ -1524,7 +1524,7 @@
             <button id="login-provider-kugou" class="kugou workflow-node" type="button" data-login-provider="kugou" onclick="selectLoginProviderNode('kugou')"><span
                 class="provider-logo">KG</span><b>酷狗音乐</b><small>官方窗口 / Cookie</small><span class="flow-port out" data-login-provider-output="kugou" title="拖到 MR 接入口"></span></button>
             <button id="login-provider-qishui" class="qishui workflow-node" type="button" data-login-provider="qishui" onclick="selectLoginProviderNode('qishui')"><span
-                class="provider-logo">QS</span><b>汽水音乐</b><small>官方扫码 / 抖音确认</small><span class="flow-port out" data-login-provider-output="qishui" title="拖到 MR 接入口"></span></button>
+                class="provider-logo">QS</span><b>汽水音乐</b><small>官方扫码 / 汽水·抖音</small><span class="flow-port out" data-login-provider-output="qishui" title="拖到 MR 接入口"></span></button>
           </div>
           <div class="login-node-hub workflow-node" data-login-node="mr">
             <span class="flow-port in" data-login-mr-target="mr" title="MR 接入口"></span>
@@ -1564,6 +1564,8 @@
             <button class="modal-btn" onclick="skipLoginAndFocusSearch()">先搜索一首歌</button>
             <button id="qq-cookie-toggle-btn" class="modal-btn" type="button"
               onclick="toggleQQCookiePanel()">手动导入</button>
+            <button id="qishui-qr-mode-btn" class="modal-btn" type="button"
+              onclick="toggleQishuiQrMode()">改用抖音扫码</button>
             <button id="refresh-qr-btn" class="modal-btn primary" onclick="startSelectedLoginConnection()">开始登录</button>
           </div>
         </div>

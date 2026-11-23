@@ -106,7 +106,7 @@ function mergeDecision(envelope) {
   return decision;
 }
 
-function officialScanUrl(indexUrl, computerName) {
+function douyinScanUrl(indexUrl, computerName) {
   const source = new URL(String(indexUrl || ''));
   const token = source.searchParams.get('token');
   if (!token) throw new Error('qrcode_index_url 缺少 token');
@@ -418,14 +418,24 @@ class QishuiAuthRuntime {
     if (envelope.message !== 'success' || Number(data.error_code) !== 0) {
       throw new Error(`二维码生成失败：code=${data.error_code} ${data.description || envelope.message || ''}`);
     }
-    const scanUrl = officialScanUrl(data.qrcode_index_url, identity.computerName);
-    const qrDataUrl = await QRCode.toDataURL(scanUrl, {
+    const qrDataUrl = String(data.qrcode || '');
+    if (!/^data:image\//i.test(qrDataUrl)) {
+      throw new Error('二维码图片无效');
+    }
+    const douyinUrl = douyinScanUrl(data.qrcode_index_url, identity.computerName);
+    const douyinQrDataUrl = await QRCode.toDataURL(douyinUrl, {
       errorCorrectionLevel: 'M',
       margin: 2,
       width: 360,
       color: { dark: '#000000', light: '#ffffff' },
     });
-    envelope.data = { ...data, qrcode: qrDataUrl, scan_url: scanUrl };
+    envelope.data = {
+      ...data,
+      qrcode: qrDataUrl,
+      douyin_qrcode: douyinQrDataUrl,
+      scan_url: String(data.qrcode_index_url || ''),
+      douyin_scan_url: douyinUrl,
+    };
     return envelope;
   }
 
