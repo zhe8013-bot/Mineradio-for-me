@@ -4,6 +4,7 @@
 
 - 维护版本 / Release tag：`2.2.3` / `v2.2.3`
 - Release 标题：`Mineradio 2.2.3 · 应用内更新与汽水扫码修复`
+- Release 页面：https://github.com/zhe8013-bot/Mineradio-for-me/releases/tag/v2.2.3
 - 发布仓库：`zhe8013-bot/Mineradio-for-me`
 - 平台：Windows x64
 - 安装包：`Mineradio-2.2.3-Setup.exe`
@@ -32,11 +33,11 @@ Release 必须包含完整安装包、对应 `.blockmap`、构建生成的 `late
 
 发布前已核对包内 `package.json`、更新源、electron-updater 6.8.9 生产依赖、EXE 版本和更新元数据一致，并确认包内不含账号 Cookie、Token、私人壁纸、缓存与原始测试数据。
 
-验证记录见 [应用内更新验收](./docs/IN_APP_UPDATE_2.2.3.md)。2.2.2 只能验证发现 2.2.3，不能自动下载安装；2.2.3 到更高正式版本的应用内安装未在本轮模拟发布。
+验证记录见 [应用内更新验收](./docs/IN_APP_UPDATE_2.2.3.md)。本机实际安装的 2.2.2 不含 updater，不能自动下载安装；2.2.3 的正式更新代码已从线上 v2.2.3 完成真实下载与 SHA-512 校验，但未执行安装，也未模拟下一个正式版本。
 
-## 发布清单
+## 线上核验
 
-- 将 README 当前版本、功能简介、正式下载入口切换为 2.2.3，保留 2.2.2 的历史说明与验收文档。
-- 将 CHANGELOG 本条和本文状态改为实际发布状态；更新 `docs/update/latest.yml` 为正式版本与实际发布时间。
-- 更新 GitHub About、Release 正文与下载资产，回读线上简介、首页、发布正文、下载信息并与本地和安装包核对。
-- 仅向 `zhe8013-bot/Mineradio-for-me` 已有 `main` 提交和推送，不新建分支或向其他仓库发布。
+- `main` 与 `v2.2.3` tag 均指向发布提交；README 当前版本、正式下载入口和 Release 页面已切换为 2.2.3。
+- Release 已公开并标记为 Latest，包含安装包、`.blockmap`、`latest.yml` 与 `SHA256SUMS.txt`。
+- GitHub 远端安装包 SHA-256 为 `bb099d77c456c532a97828ed3bfc66a40e56a3b0f7a40c0033a44645480736cf`，与本地构建和 `SHA256SUMS.txt` 一致。
+- GitHub About、README 与 Release 正文已回读，版本、汽水扫码说明和首次手动升级边界一致。
