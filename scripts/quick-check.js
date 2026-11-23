@@ -1708,6 +1708,12 @@ function checkQishuiProviderGuard() {
   if (!/pollQishuiQr/.test(qishuiLoginText) || !/请使用汽水音乐 App 扫码并确认登录/.test(qishuiLoginText) || !/douyinQrcode/.test(qishuiLoginText) || !/applyQishuiQrMode/.test(qishuiLoginText) || /读取本机汽水|本机会话|Token 导入|submitQishuiTokenLogin|openQishuiMusicLogin/.test(qishuiLoginText)) {
     fail('Qishui login UI must use only the official in-panel QR flow');
   }
+  const qishuiLoginCss = fs.readFileSync(path.join(appRoot, 'public', 'css', 'index.css'), 'utf8');
+  if (!/loginDrawer\.classList\.toggle\('qishui-mode', isQishui\)/.test(qishuiLoginText) ||
+      !/\.login-auth-drawer\.qishui-mode\s*\{[\s\S]{0,180}?280px/.test(qishuiLoginCss) ||
+      !/\.login-auth-drawer\.qishui-mode\s+#qr-img\s*\{[\s\S]{0,120}?width:\s*280px;[\s\S]{0,80}?height:\s*280px/.test(qishuiLoginCss)) {
+    fail('Qishui login QR must render at the tested 280px size for Android app scanning');
+  }
   if (/ipcMain\.handle\('qishui-music-open-login'/.test(desktopMainText) || /openQishuiMusicLogin/.test(desktopPreloadText) || !/await qishuiQrLogin\.clear\(\)/.test(desktopMainText)) {
     fail('Qishui desktop bridge must remove the old login-window IPC and await Passport partition cleanup');
   }

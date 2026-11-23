@@ -26,7 +26,7 @@ function serverFunctionSource(name, nextName) {
 }
 
 test('release metadata retains bounded HTTPS manual download pages', () => {
-  assert.equal(packageData.version, '2.2.3');
+  assert.equal(packageData.version, '2.2.4');
   assert.equal(packageData.dependencies['electron-updater'], '6.8.9');
   assert.equal(packageData.mineradio.update.owner, 'zhe8013-bot');
   assert.equal(packageData.mineradio.update.repo, 'Mineradio-for-me');
@@ -41,7 +41,7 @@ test('release metadata retains bounded HTTPS manual download pages', () => {
   assert.match(serverText, /\n\s+downloadPageUrl,/);
   assert.match(serverText, /\n\s+downloadPages,/);
   assert.match(serverText, /patchAvailable:\s*false/);
-  assert.match(htmlText, /id="update-modal-version"[^>]*>v2\.2\.3</);
+  assert.match(htmlText, /id="update-modal-version"[^>]*>v2\.2\.4</);
   assert.match(htmlText, /id="update-download-sources"/);
 });
 

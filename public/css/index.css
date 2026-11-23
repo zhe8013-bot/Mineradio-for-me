@@ -9028,6 +9028,16 @@ body.login-guide-active #login-guide-canvas {
   border-radius: 10px
 }
 
+.login-auth-drawer.qishui-mode {
+  grid-template-columns: minmax(0, 1fr) 280px
+}
+
+.login-auth-drawer.qishui-mode .qr-shell,
+.login-auth-drawer.qishui-mode #qr-img {
+  width: 280px;
+  height: 280px
+}
+
 .login-auth-drawer .qq-cookie-panel.show {
   width: 100%;
   margin: 0

@@ -956,7 +956,10 @@ function updateLoginProviderUi() {
   var spotifyWizard = document.getElementById('spotify-setup-wizard');
   var canOpenSpotifyOAuth = !!(window.desktopWindow && typeof window.desktopWindow.openSpotifyMusicLogin === 'function');
   var spotifyBusy = !!(spotifyConfigBusy || spotifyOAuthBusy);
-  if (loginDrawer) loginDrawer.classList.toggle('spotify-mode', isSpotify);
+  if (loginDrawer) {
+    loginDrawer.classList.toggle('spotify-mode', isSpotify);
+    loginDrawer.classList.toggle('qishui-mode', isQishui);
+  }
   if (loginModalPanel) loginModalPanel.classList.toggle('spotify-setup-open', isSpotify);
   if (spotifyWizard) spotifyWizard.setAttribute('aria-hidden', isSpotify ? 'false' : 'true');
   updateLoginNodeGraphUi();
